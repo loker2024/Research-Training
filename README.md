@@ -15,6 +15,7 @@
 ├── notebooks/
 │   └── long_term_forecasting_v1.ipynb
 ├── docs/
+│   ├── datasets.md
 │   └── v1_implementation.md
 ├── data/
 │   └── README.md
@@ -34,3 +35,4 @@ jupyter notebook notebooks/long_term_forecasting_v1.ipynb
 
 notebook 默认使用合成数据跑通流程。下载 ECL、ETT、ILI 或 Traffic 数据后，将 CSV 放入 `data/`，并在 notebook 的配置单元中修改 `DATA_PATH`、`TARGET_COL` 和 `TIME_COL`。
 
+如果还不了解这些公开数据集，先阅读 [docs/datasets.md](docs/datasets.md)。

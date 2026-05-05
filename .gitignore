@@ -1,0 +1,18 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# Public datasets are often large; keep local data out of git by default.
+data/*.csv
+data/*.txt
+data/*.xlsx
+data/*.zip
+
+# Training outputs can be regenerated.
+outputs/
+checkpoints/
+runs/

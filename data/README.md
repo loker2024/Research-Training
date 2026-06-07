@@ -10,4 +10,4 @@
 
 notebook 会按时间顺序切分数据，并只用训练集统计量做标准化，避免数据泄露。
 
-数据集背景、适用场景和字段说明见 [../docs/datasets.md](../docs/datasets.md)。
+当前精简实验使用 ETTh1、ETTm1、ECL 三个数据集；完整执行顺序见 [../docs/项目步骤.md](../docs/项目步骤.md)。

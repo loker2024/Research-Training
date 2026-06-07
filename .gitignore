@@ -5,14 +5,31 @@ __pycache__/
 .venv/
 venv/
 env/
+myenv/
+
+# Local editor and assistant settings.
+.vscode/
+.claude/
 
 # Public datasets are often large; keep local data out of git by default.
 data/*.csv
 data/*.txt
 data/*.xlsx
 data/*.zip
+data/processed/
 
 # Training outputs can be regenerated.
 outputs/
 checkpoints/
 runs/
+results/
+*.pt
+*.pth
+*.ckpt
+*.npy
+*.npz
+*.log
+events.out.tfevents.*
+
+# Generated visual summaries.
+combined_visualization.png

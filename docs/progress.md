@@ -220,6 +220,135 @@
 
 ---
 
+## Autoformer 轻量化与训练 notebook 重写 ✅
+
+**完成时间**：2026/06/07 16:52
+
+**完成内容**：
+1. ✅ 重写 `models/autoformer.py`，保留序列分解与 FFT Auto-Correlation，但改为全局 Top-K lag + `torch.roll` 聚合，减少逐 batch/head gather 开销
+2. ✅ 将 Autoformer 解码器改为 Direct-Forecast 时间投影，去掉 horizon 维度上的自注意力和交叉注意力堆叠
+3. ✅ 重写 `notebooks/train_variants.ipynb`，默认只快速验证 Autoformer，并通过 `MODELS_TO_RUN` 控制是否训练 Informer / PatchTST
+4. ✅ notebook 默认切换到项目要求的预测步长 `96/168/336`，修正 `ETTm1` 数据集名称大小写
+5. ✅ 增加 `FAST_DEV_RUN`、`SAMPLE_LIMITS` 和按数据集设置 batch size，避免一次训练默认全量跑 100 轮
+
+**修改的文件**：
+- `models/autoformer.py` - 轻量 Direct-Forecast Autoformer 实现
+- `notebooks/train_variants.ipynb` - 可控快速训练模板
+- `docs/progress.md` - 追加本次优化记录
+
+**测试结果**：
+- ✅ `python -m py_compile models/autoformer.py models/__init__.py` 通过
+- ✅ `notebooks/train_variants.ipynb` JSON 解析通过
+- ✅ Autoformer 前向形状测试通过：`(2, 96, 7) -> (2, 96, 7)`
+- ✅ ECL 规模前向形状测试通过：`(1, 96, 321) -> (1, 336, 321)`
+- ✅ ETTh1 h96 小样本训练 smoke test 通过：CPU 上 128 个训练样本、64 个验证样本完成 1 轮，epoch 训练时间约 0.2s
+
+**下一步任务**：
+1. 用 `FAST_DEV_RUN=True` 依次跑通 ETTh1 的 `96/168/336`
+2. 关闭快速验证后运行正式核心实验，并记录每个模型的训练耗时与指标
+3. 若要跑 ECL 完整实验，优先处理当前压缩 `.npz` 文件过大的加载问题
+
+---
+
+## train_variants notebook 中文乱码修复 ✅
+
+**完成时间**：2026/06/07 16:58
+
+**完成内容**：
+1. ✅ 修复 `notebooks/train_variants.ipynb` 中被写成 `?` 的中文 Markdown 标题和说明
+2. ✅ 同步修复代码单元中的中文注释、输出提示、图表标题和标签
+
+**修改的文件**：
+- `notebooks/train_variants.ipynb` - 恢复中文文案
+- `docs/progress.md` - 追加本次修复记录
+
+**测试结果**：
+- ✅ notebook JSON 可正常解析
+- ✅ `rg "??" notebooks/train_variants.ipynb` 未发现连续问号乱码残留
+
+**下一步任务**：
+1. 在 Jupyter 中重新打开 `train_variants.ipynb` 检查显示效果
+2. 继续执行 Autoformer 快速验证训练
+
+---
+
+## train_variants 结果保存逻辑修正 ✅
+
+**完成时间**：2026/06/07 17:15
+
+**完成内容**：
+1. ✅ 修正多模型训练时只保存一个 `variant_results` 文件的问题
+2. ✅ 改为按模型分别保存结果文件，命名格式为 `{DATASET}_h{HORIZON}_{model_name}_results.npy`
+3. ✅ 清理 notebook 中残留的旧执行输出，避免继续显示 `h24_variant_results.npy`
+
+**修改的文件**：
+- `notebooks/train_variants.ipynb` - 调整结果保存单元
+- `docs/progress.md` - 追加本次修复记录
+
+**测试结果**：
+- ✅ notebook JSON 可正常解析
+- ✅ `rg "variant_results|variant_|变体模型结果|h24_variant" notebooks/train_variants.ipynb` 未发现旧命名残留
+
+**下一步任务**：
+1. 重新运行保存结果单元，确认生成以模型名命名的结果文件
+2. 继续执行 Autoformer 快速验证训练
+
+---
+
+## train_variants 实验配置与结果字段补充 ✅
+
+**完成时间**：2026/06/07 17:22
+
+**完成内容**：
+1. ✅ 将训练学习率提到配置单元，新增 `LEARNING_RATE`，避免在 `Trainer(..., lr=...)` 中硬编码
+2. ✅ 每个模型结果文件新增训练配置字段：`epochs`、`trained_epochs`、`best_epoch`、`patience`、`batch_size`、`learning_rate`、`device`
+3. ✅ 每个模型结果文件新增数据与模型字段：`train_samples`、`val_samples`、`test_samples`、`input_size`、`target_idx`、`model_params`
+4. ✅ 每个模型结果文件新增训练摘要字段：`train_time_seconds`、`best_val_loss`、`best_val_r2`
+
+**修改的文件**：
+- `notebooks/train_variants.ipynb` - 更新配置、训练和结果保存单元
+- `docs/progress.md` - 追加本次修复记录
+
+**测试结果**：
+- ✅ notebook JSON 可正常解析
+- ✅ `Trainer(model, device=DEVICE, lr=LEARNING_RATE)` 已替代硬编码学习率
+- ✅ 保存结果结构包含 epoch、学习率、样本量、模型参数量和最佳轮次等实验元信息
+
+**下一步任务**：
+1. 重新运行训练单元和保存单元，检查生成的模型结果文件字段
+2. 继续执行 Autoformer 快速验证训练
+
+---
+
+## train_variants 批量实验循环改造 ✅
+
+**完成时间**：2026/06/07 17:35
+
+**完成内容**：
+1. ✅ 将单变量 `DATASET`、`HORIZON` 改为列表配置 `DATASETS_TO_RUN`、`HORIZONS_TO_RUN`
+2. ✅ 保留 `MODELS_TO_RUN` 列表配置，形成 `dataset × horizon × model` 的批量实验循环
+3. ✅ 将数据加载封装为 `create_experiment_data(dataset_name, horizon)`，每个数据集和预测步长组合会重新加载对应数据
+4. ✅ 将模型构建改为 `build_model(model_name, input_size, horizon)`，避免依赖全局 `HORIZON`
+5. ✅ 训练完成后立即按 `{dataset}_h{horizon}_{model}_results.npy` 保存单模型结果，防止批量实验中途失败导致前面结果丢失
+6. ✅ 清理 notebook 旧执行输出，避免旧单实验结果干扰当前批量模板
+
+**修改的文件**：
+- `notebooks/train_variants.ipynb` - 改造为批量实验模板
+- `docs/progress.md` - 追加本次修复记录
+
+**测试结果**：
+- ✅ notebook JSON 可正常解析
+- ✅ 所有代码单元可通过 Python 语法解析
+- ✅ 导入、配置、数据函数和模型构建函数定义单元可执行
+- ✅ 未发现 `DATASET = ...`、`HORIZON = ...` 单实验旧赋值残留
+- ✅ `rg "??" notebooks/train_variants.ipynb` 未发现连续问号乱码残留
+
+**下一步任务**：
+1. 用默认 `DATASETS_TO_RUN=[DATASETS[0]]`、`HORIZONS_TO_RUN=[HORIZON_LIST[0]]` 先跑通单组合
+2. 再逐步扩展为多个 horizon 或多个 dataset，避免一次性触发过大的 ECL 完整训练
+
+---
+
 ## 待办事项
 
 - [ ] 步骤 4：核心实验运行

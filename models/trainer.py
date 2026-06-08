@@ -10,10 +10,32 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 
+def resolve_device(device='auto'):
+    """Resolve a requested training device.
+
+    ``auto`` prefers CUDA for Windows training, then MPS for Mac smoke tests,
+    and finally CPU.
+    """
+    if device is None:
+        device = 'auto'
+    requested = str(device).lower()
+    if requested == 'auto':
+        if torch.cuda.is_available():
+            return 'cuda'
+        if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            return 'mps'
+        return 'cpu'
+    if requested == 'cuda' and torch.cuda.is_available():
+        return 'cuda'
+    if requested == 'mps' and hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        return 'mps'
+    return 'cpu'
+
+
 class Trainer:
     """时序预测模型训练器"""
 
-    def __init__(self, model, device='cuda', lr=1e-3, weight_decay=1e-5):
+    def __init__(self, model, device='auto', lr=1e-3, weight_decay=1e-5):
         """
         Args:
             model: 模型实例
@@ -22,7 +44,7 @@ class Trainer:
             weight_decay: 权重衰减
         """
         self.model = model
-        self.device = device if torch.cuda.is_available() else 'cpu'
+        self.device = resolve_device(device)
         self.model.to(self.device)
 
         # 损失函数和优化器

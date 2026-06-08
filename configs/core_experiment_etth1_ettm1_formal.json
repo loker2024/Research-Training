@@ -1,0 +1,18 @@
+{
+  "datasets": "ETTh1,ETTm1",
+  "horizons": "24,48,96,168,336",
+  "models": "lstm,transformer,informer,autoformer,patchtst",
+  "epochs": 20,
+  "patience": 5,
+  "batch_size": 32,
+  "lr": 0.001,
+  "weight_decay": 0.00001,
+  "device": "auto",
+  "seed": 42,
+  "run_tag": "formal_seed42",
+  "data_dir": "data/processed",
+  "sample_limit": 0,
+  "num_workers": 0,
+  "no_tensorboard": false,
+  "skip_existing": true
+}

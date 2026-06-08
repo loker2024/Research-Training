@@ -33,14 +33,79 @@ Research-Training/
 pip install -r requirements.txt
 ```
 
-如果使用本地虚拟环境，建议命名为 `myenv`，该目录已被 `.gitignore` 忽略。
+推荐按平台使用现有环境：
+
+```bash
+# Mac
+conda activate miniMac
+
+# Windows
+myenv\Scripts\activate
+```
+
+`myenv/` 已被 `.gitignore` 忽略，用于 Windows 本地环境；Mac 侧使用 Conda 的 `miniMac`。
 
 ## 运行顺序
 
-1. 运行 `notebooks/data_preparation.ipynb` 完成数据下载、归一化和滑动窗口预处理。
+1. 运行 `notebooks/data_preparation.ipynb` 或 `python scripts/preprocess_data.py --datasets ETTh1 --horizons 96` 完成数据下载、归一化和滑动窗口预处理。
 2. 运行 `notebooks/train_baseline.ipynb` 训练 LSTM 与 Transformer 基线。
-3. 运行 `notebooks/train_variants.ipynb` 训练 Informer、Autoformer 与 PatchTST。
-4. 每完成独立步骤后更新 `docs/progress.md`。
+3. 运行 `notebooks/train_variants.ipynb` 或 `python scripts/run_experiments.py --datasets ETTh1 --horizons 96 --models autoformer` 训练 Informer、Autoformer 与 PatchTST。
+4. 运行 `python scripts/summarize_results.py --datasets ETTh1 --horizons 24,48,96,168,336 --output-prefix ETTh1_quick_summary` 汇总已保存结果。
+5. 运行 `python scripts/organize_results.py --overwrite` 按步长和模型整理 `results/`。
+6. 每完成独立步骤后更新 `docs/progress.md`。
+
+常用命令示例：
+
+```bash
+# 使用配置文件运行，适合正式实验和复现实验
+python scripts/run_experiments.py --config configs/core_experiment_smoke.json
+
+# ETTh1/ETTm1 正式核心实验配置（运行时间较长）
+python scripts/run_experiments.py --config configs/core_experiment_etth1_ettm1_formal.json
+
+# 中断后续跑：配置文件已默认开启 skip_existing，也可命令行显式开启
+python scripts/run_experiments.py \
+  --config configs/core_experiment_etth1_ettm1_formal.json \
+  --skip-existing
+
+# 将结果分类为按步长/按模型两个视图
+python scripts/organize_results.py --overwrite
+
+# 优化变体重训结果使用 run tag，避免覆盖旧结果
+python scripts/run_experiments.py \
+  --datasets ETTh1,ETTm1 \
+  --horizons 24,48,96,168,336 \
+  --models informer,patchtst \
+  --run-tag optv2 \
+  --seed 42
+
+# ECL 高维数据先使用单独 smoke 目录验证流程
+python scripts/preprocess_data.py \
+  --datasets ECL \
+  --horizons 96 \
+  --output-dir data/processed_smoke \
+  --max-samples-per-split 256
+
+python scripts/run_experiments.py \
+  --data-dir data/processed_smoke \
+  --datasets ECL \
+  --horizons 96 \
+  --models informer,patchtst \
+  --run-tag ecl_smoke_optv2 \
+  --sample-limit 64 \
+  --batch-size 8 \
+  --seed 42
+```
+
+结果目录分类：
+
+```text
+results/
+├── by_horizon/h24/{dataset}/{model}/{run_tag}/
+├── by_model/{model}/{dataset}/h24/{run_tag}/
+├── summaries/
+└── RESULTS_INDEX.md
+```
 
 ## 当前进度
 

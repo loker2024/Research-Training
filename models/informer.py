@@ -186,32 +186,49 @@ class InformerEncoder(nn.Module):
 
 
 class InformerDecoder(nn.Module):
-    """Informer 生成式解码器
+    """轻量生成式解码器。
 
-    一次性生成所有预测时间步，而不是自回归生成。
+    保留 Informer 编码器中的 ProbSparse 注意力，将原本 horizon 维度上的
+    自注意力/交叉注意力堆叠替换为一次性时间投影，便于 ECL 这类高维数据
+    先跑通核心实验。
     """
 
-    def __init__(self, d_model, n_heads, horizon, n_layers=2, d_ff=256, dropout=0.1):
+    def __init__(
+        self,
+        d_model,
+        n_heads,
+        horizon,
+        n_layers=2,
+        d_ff=256,
+        dropout=0.1,
+        lookback=96,
+    ):
         super().__init__()
+        del n_heads
         self.horizon = horizon
-
-        # 可学习的查询 token
-        self.query_token = nn.Parameter(torch.randn(1, horizon, d_model))
-
-        # 自注意力层
-        self.self_attn_layers = nn.ModuleList([
-            nn.TransformerEncoderLayer(d_model, n_heads, d_ff, dropout, batch_first=True)
-            for _ in range(n_layers)
+        self.lookback = lookback
+        self.time_projection = nn.Linear(lookback, horizon)
+        self.refine_layers = nn.ModuleList([
+            nn.Sequential(
+                nn.LayerNorm(d_model),
+                nn.Linear(d_model, d_ff),
+                nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(d_ff, d_model),
+                nn.Dropout(dropout),
+            )
+            for _ in range(max(1, n_layers))
         ])
 
-        # 交叉注意力层
-        self.cross_attn_layers = nn.ModuleList([
-            nn.MultiheadAttention(d_model, n_heads, dropout=dropout, batch_first=True)
-            for _ in range(n_layers)
-        ])
-
-        self.norms1 = nn.ModuleList([nn.LayerNorm(d_model) for _ in range(n_layers)])
-        self.norms2 = nn.ModuleList([nn.LayerNorm(d_model) for _ in range(n_layers)])
+    def _fit_length(self, x):
+        if x.shape[1] == self.lookback:
+            return x
+        return F.interpolate(
+            x.transpose(1, 2),
+            size=self.lookback,
+            mode='linear',
+            align_corners=False,
+        ).transpose(1, 2)
 
     def forward(self, enc_out):
         """
@@ -220,18 +237,10 @@ class InformerDecoder(nn.Module):
         Returns:
             dec_out: 解码器输出 (B, horizon, D)
         """
-        B = enc_out.shape[0]
-
-        # 初始化查询
-        dec_out = self.query_token.expand(B, -1, -1)  # (B, horizon, D)
-
-        for i in range(len(self.self_attn_layers)):
-            # 自注意力
-            dec_out = self.self_attn_layers[i](dec_out)
-            # 交叉注意力
-            cross_out, _ = self.cross_attn_layers[i](dec_out, enc_out, enc_out)
-            dec_out = self.norms1[i](dec_out + cross_out)
-
+        enc_out = self._fit_length(enc_out)
+        dec_out = self.time_projection(enc_out.transpose(1, 2)).transpose(1, 2)
+        for layer in self.refine_layers:
+            dec_out = dec_out + layer(dec_out)
         return dec_out
 
 
@@ -247,12 +256,14 @@ class InformerModel(nn.Module):
     """
 
     def __init__(self, input_size, d_model=128, n_heads=8, n_encoder_layers=3,
-                 n_decoder_layers=2, d_ff=256, factor=5, dropout=0.1, horizon=96):
+                 n_decoder_layers=2, d_ff=256, factor=5, dropout=0.1, horizon=96,
+                 lookback=96):
         super().__init__()
 
         self.input_size = input_size
         self.d_model = d_model
         self.horizon = horizon
+        self.lookback = lookback
 
         # 输入投影
         self.input_projection = nn.Linear(input_size, d_model)
@@ -267,7 +278,7 @@ class InformerModel(nn.Module):
 
         # 解码器
         self.decoder = InformerDecoder(
-            d_model, n_heads, horizon, n_decoder_layers, d_ff, dropout
+            d_model, n_heads, horizon, n_decoder_layers, d_ff, dropout, lookback
         )
 
         # 输出投影

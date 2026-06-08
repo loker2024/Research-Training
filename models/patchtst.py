@@ -210,33 +210,18 @@ class PatchTSTModel(nn.Module):
         """
         B, L, C = x.shape
 
-        # 存储每个变量的预测
-        predictions = []
+        # Channel Independence：每个变量仍独立建模，但合并到 batch 维度一次性计算。
+        # (B, L, C) -> (B, C, L) -> (B*C, L, 1)
+        x = x.permute(0, 2, 1).contiguous().view(B * C, L, 1)
 
-        # 对每个变量独立处理（Channel Independence）
-        for i in range(C):
-            # 提取单个变量: (B, L, 1)
-            x_var = x[:, :, i:i+1]
+        patches = self.patch_embedding(x)  # (B*C, num_patches, d_model)
+        patches = self.position_encoding(patches)
+        encoded = self.encoder(patches)  # (B*C, num_patches, d_model)
 
-            # Patch 嵌入
-            patches = self.patch_embedding(x_var)  # (B, num_patches, d_model)
+        encoded_t = encoded.transpose(1, 2)
+        pred = self.simple_head(encoded_t)  # (B*C, horizon)
 
-            # 位置编码
-            patches = self.position_encoding(patches)
-
-            # Transformer 编码器
-            encoded = self.encoder(patches)  # (B, num_patches, d_model)
-
-            # 预测（使用简单头）
-            # 转置用于池化: (B, d_model, num_patches)
-            encoded_t = encoded.transpose(1, 2)
-            pred = self.simple_head(encoded_t)  # (B, horizon)
-            predictions.append(pred)
-
-        # 堆叠所有变量的预测: (B, horizon, C)
-        output = torch.stack(predictions, dim=-1)
-        output = output.permute(0, 1, 2)  # (B, horizon, C)
-
+        output = pred.view(B, C, self.horizon).permute(0, 2, 1).contiguous()
         return output
 
 

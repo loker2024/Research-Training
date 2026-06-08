@@ -17,6 +17,8 @@ data/*.txt
 data/*.xlsx
 data/*.zip
 data/processed/
+data/processed_smoke/
+data.zip
 
 # Training outputs can be regenerated.
 outputs/

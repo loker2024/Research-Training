@@ -1,0 +1,18 @@
+{
+  "datasets": "ECL",
+  "horizons": "96",
+  "models": "informer,patchtst",
+  "epochs": 1,
+  "patience": 1,
+  "batch_size": 8,
+  "lr": 0.001,
+  "weight_decay": 0.00001,
+  "device": "auto",
+  "seed": 42,
+  "run_tag": "ecl_smoke_optv2",
+  "data_dir": "data/processed_smoke",
+  "sample_limit": 64,
+  "num_workers": 0,
+  "no_tensorboard": true,
+  "skip_existing": true
+}

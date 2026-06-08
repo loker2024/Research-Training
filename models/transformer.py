@@ -1,5 +1,7 @@
 """Transformer 基线模型"""
 
+import copy
+
 import torch
 import torch.nn as nn
 import math
@@ -103,7 +105,7 @@ class TransformerModel(nn.Module):
             dropout=dropout
         )
         self.transformer_encoder = nn.ModuleList(
-            [encoder_layer for _ in range(num_layers)]
+            [copy.deepcopy(encoder_layer) for _ in range(num_layers)]
         )
 
         # 输出层

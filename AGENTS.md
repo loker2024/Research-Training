@@ -21,7 +21,10 @@
 
 ## 环境配置
 
-**本地虚拟环境**: `myenv` (位于项目根目录)
+**本地虚拟环境**：
+
+- Mac: Conda 环境 `miniMac`
+- Windows: 项目根目录下的 `myenv`
 
 激活虚拟环境：
 
@@ -29,8 +32,8 @@
 # Windows
 myenv\Scripts\activate
 
-# Linux/Mac
-source myenv/bin/activate
+# Mac
+conda activate miniMac
 ```
 
 ## 依赖安装
@@ -52,7 +55,7 @@ Research-Training/
 
 ## 运行说明
 
-1. 激活虚拟环境 `myenv`
+1. 激活对应平台的虚拟环境（Mac: `miniMac`，Windows: `myenv`）
 2. 启动 Jupyter: `jupyter notebook`
 3. 按照 `项目步骤.md` 中的顺序执行实验
 
@@ -67,4 +70,3 @@ Research-Training/
 - 修改的文件
 - 测试结果
 - 下一步任务
-

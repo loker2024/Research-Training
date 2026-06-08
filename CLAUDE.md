@@ -14,14 +14,17 @@
 | ETTm1 | 7   | 15分钟 | 前12月/4月/4月  |
 | ECL   | 321 | 小时   | 70%/10%/20% |
 
-**预测步长**：96、168、336（覆盖中长期）
+**预测步长**：24、48、96、168、336（覆盖中长期）
 **回看窗口**：96
 
 > 原始 CSV 文件（data/\*.csv）保留全部 7 个数据集，仅处理以上 3 个。
 
 ## 环境配置
 
-**本地虚拟环境**: `myenv` (位于项目根目录)
+**本地虚拟环境**：
+
+- Mac: Conda 环境 `miniMac`
+- Windows: 项目根目录下的 `myenv`
 
 激活虚拟环境：
 
@@ -29,8 +32,8 @@
 # Windows
 myenv\Scripts\activate
 
-# Linux/Mac
-source myenv/bin/activate
+# Mac
+conda activate miniMac
 ```
 
 ## 依赖安装
@@ -52,7 +55,7 @@ Research-Training/
 
 ## 运行说明
 
-1. 激活虚拟环境 `myenv`
+1. 激活对应平台的虚拟环境（Mac: `miniMac`，Windows: `myenv`）
 2. 启动 Jupyter: `jupyter notebook`
 3. 按照 `项目步骤.md` 中的顺序执行实验
 
@@ -67,4 +70,3 @@ Research-Training/
 - 修改的文件
 - 测试结果
 - 下一步任务
-

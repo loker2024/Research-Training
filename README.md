@@ -23,7 +23,7 @@ Research-Training/
 ├── models/         # LSTM、Transformer、Informer、Autoformer、PatchTST 与训练框架
 ├── notebooks/      # 数据准备、基线训练、变体训练 notebook
 ├── papers/         # 相关论文 PDF
-├── results/        # 实验结果，本地保存，不上传 GitHub
+├── results/        # 保留的正式实验结果；临时/烟测结果可清理后再提交
 └── checkpoints/    # 模型权重，本地保存，不上传 GitHub
 ```
 
@@ -51,7 +51,7 @@ myenv\Scripts\activate
 2. 运行 `notebooks/train_baseline.ipynb` 训练 LSTM 与 Transformer 基线。
 3. 运行 `notebooks/train_variants.ipynb` 或 `python scripts/run_experiments.py --datasets ETTh1 --horizons 96 --models autoformer` 训练 Informer、Autoformer 与 PatchTST。
 4. 运行 `python scripts/summarize_results.py --datasets ETTh1 --horizons 24,48,96,168,336 --output-prefix ETTh1_quick_summary` 汇总已保存结果。
-5. 运行 `python scripts/organize_results.py --overwrite` 按步长和模型整理 `results/`。
+5. 新训练结果会直接写入 `results/h{horizon}/{dataset}/{model}/{run_tag}/`；旧顶层结果可运行 `python scripts/organize_results.py --overwrite` 链接到同样的按步长结构。当前仓库追踪清理后的正式结果与汇总表，临时 quick/smoke/optv2 中间结果不保留。
 6. 每完成独立步骤后更新 `docs/progress.md`。
 
 常用命令示例：
@@ -68,7 +68,7 @@ python scripts/run_experiments.py \
   --config configs/core_experiment_etth1_ettm1_formal.json \
   --skip-existing
 
-# 将结果分类为按步长/按模型两个视图
+# 将旧顶层结果补充整理到按步长视图
 python scripts/organize_results.py --overwrite
 
 # 优化变体重训结果使用 run tag，避免覆盖旧结果
@@ -101,8 +101,11 @@ python scripts/run_experiments.py \
 
 ```text
 results/
-├── by_horizon/h24/{dataset}/{model}/{run_tag}/
-├── by_model/{model}/{dataset}/h24/{run_tag}/
+├── h24/{dataset}/{model}/{run_tag}/
+├── h48/{dataset}/{model}/{run_tag}/
+├── h96/{dataset}/{model}/{run_tag}/
+├── h168/{dataset}/{model}/{run_tag}/
+├── h336/{dataset}/{model}/{run_tag}/
 ├── summaries/
 └── RESULTS_INDEX.md
 ```

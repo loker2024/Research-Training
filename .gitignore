@@ -24,11 +24,12 @@ data.zip
 outputs/
 checkpoints/
 runs/
-results/
+
 *.pt
 *.pth
 *.ckpt
 *.npy
+!results/**/*.npy
 *.npz
 *.log
 events.out.tfevents.*

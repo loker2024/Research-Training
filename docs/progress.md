@@ -654,34 +654,41 @@
 **完成时间**：2026/06/08
 
 **完成内容**：
-1. ✅ 新增 `scripts/organize_results.py`，将顶层结果文件整理成分类视图
-2. ✅ 生成按步长分类目录：`results/by_horizon/h{horizon}/{dataset}/{model}/{run_tag}/`
-3. ✅ 生成按模型分类目录：`results/by_model/{model}/{dataset}/h{horizon}/{run_tag}/`
+1. ✅ 新增 `scripts/organize_results.py`，将旧顶层结果文件整理成按步长分类视图
+2. ✅ 生成按步长分类目录：`results/h{horizon}/{dataset}/{model}/{run_tag}/`
+3. ✅ 按用户要求停用按模型分类视图，不再维护 `results/by_model`
 4. ✅ 生成汇总表分类目录：`results/summaries/`
 5. ✅ 生成结果索引文件：`results/RESULTS_INDEX.md`
-6. ✅ 使用符号链接组织结果，原始顶层结果文件仍保留，避免重复占用磁盘
+6. ✅ 使用符号链接组织旧结果，原始顶层结果文件仍保留，避免重复占用磁盘
+7. ✅ 新训练结果已改为生成时直接写入 `results/h{horizon}/{dataset}/{model}/{run_tag}/`
 
 **修改的文件**：
 - `scripts/organize_results.py` - 新增结果分类脚本
+- `scripts/run_experiments.py` - 新结果生成时直接按步长分类落盘
+- `scripts/summarize_results.py` - 递归读取分类结果，并跳过符号链接避免重复汇总
 - `README.md` - 补充结果分类命令和目录结构
 - `docs/progress.md` - 追加本次整理记录
 
 **生成的本地结果目录**：
-- `results/by_horizon/`
-- `results/by_model/`
+- `results/h24/`
+- `results/h48/`
+- `results/h96/`
+- `results/h168/`
+- `results/h336/`
 - `results/summaries/`
 - `results/RESULTS_INDEX.md`
 
 **测试结果**：
 - ✅ `python -m py_compile scripts/organize_results.py` 通过
-- ✅ 已索引实验 summary：96 个
-- ✅ `results/by_horizon` 下包含 `h24/h48/h96/h168/h336`
-- ✅ `results/by_model` 下包含 `autoformer/informer/lstm/patchtst/transformer`
-- ✅ `results/summaries` 下包含 14 个 CSV/Markdown 汇总文件链接
-- ✅ 分类视图总计创建/更新 384 个结果文件链接
+- ✅ 已索引实验 summary：99 个
+- ✅ `results/` 下包含 `h24/h48/h96/h168/h336`
+- ✅ `results/by_model` 已移除
+- ✅ `results/summaries` 下包含 17 个 CSV/Markdown 汇总文件链接
+- ✅ 分类视图总计创建/更新 198 个旧结果文件链接
+- ✅ 新生成的 `ETTh1 h24 LSTM formal_seed42` 结果直接保存到 `results/h24/ETTh1/lstm/formal_seed42/`
 
 **下一步任务**：
-1. 正式实验结果生成后继续运行 `python scripts/organize_results.py --overwrite`
+1. 正式实验结果会自动进入 `results/h{horizon}/...`
 2. 在正式汇总表中区分 `quick5`、`optv2`、`formal_seed42` 等 run tag
 3. 继续执行五步长正式多 epoch 训练
 
@@ -762,3 +769,157 @@
 1. 继续正式实验：ETTh1 h24 的 LSTM/Transformer/Informer/Autoformer
 2. 再扩展到 ETTh1 的 h48/h96/h168/h336
 3. ETTh1 完成后继续 ETTm1 的五步长正式实验
+
+---
+
+## ETTh1 h24 LSTM 正式实验与生成时分类 ✅
+
+**完成时间**：2026/06/08
+
+**完成内容**：
+1. ✅ 按用户要求调整结果组织方式：不再需要按模型分类目录
+2. ✅ `scripts/run_experiments.py` 改为结果生成时直接保存到 `results/h{horizon}/{dataset}/{model}/{run_tag}/`
+3. ✅ `scripts/summarize_results.py` 改为递归扫描分类目录，并跳过符号链接避免重复统计
+4. ✅ `scripts/organize_results.py` 改为只将旧顶层结果链接到 horizon-first 分类结构
+5. ✅ 移除旧后处理视图目录 `results/by_model` 与 `results/by_horizon`
+6. ✅ 使用新保存路径运行 ETTh1 / h24 / LSTM 正式实验
+7. ✅ 更新 ETTh1 h24 formal 局部汇总，当前包含 LSTM 与 PatchTST 两个正式模型
+
+**修改的文件**：
+- `scripts/run_experiments.py` - 生成时按步长分类保存结果
+- `scripts/summarize_results.py` - 递归汇总并跳过符号链接
+- `scripts/organize_results.py` - 仅整理旧结果到 horizon-first 结构
+- `README.md` - 更新结果目录说明
+- `docs/progress.md` - 追加本次记录
+
+**生成的本地结果文件**：
+- `results/h24/ETTh1/lstm/formal_seed42/ETTh1_h24_lstm_formal_seed42_results.npy`
+- `results/h24/ETTh1/lstm/formal_seed42/ETTh1_h24_lstm_formal_seed42_summary.json`
+- `results/formal_seed42_etth1_h24_partial_summary.csv`
+- `results/formal_seed42_etth1_h24_partial_summary.md`
+
+**测试结果**：
+- ✅ ETTh1 h24 LSTM 正式训练完成：上限 20 epoch，实际 11 epoch 后早停
+- ✅ 最佳验证损失：0.879645
+- ✅ 测试 MSE：0.870239
+- ✅ 测试 MAE：0.664989
+- ✅ 测试 R²：0.319114
+- ✅ 新结果直接保存到 `results/h24/ETTh1/lstm/formal_seed42/`
+- ✅ `results/by_model` 已移除
+- ✅ 汇总表去重后只包含 LSTM 与 PatchTST 各一行
+
+**下一步任务**：
+1. 继续 ETTh1 h24 的 Transformer/Informer/Autoformer 正式实验
+2. 每个正式结果都会直接落到 `results/h24/...`
+3. ETTh1 h24 五模型完成后生成完整 h24 formal 汇总
+
+---
+
+## ETTh1 h24 五模型正式实验完成 ✅
+
+**完成时间**：2026/06/08 15:01
+
+**完成内容**：
+1. ✅ 继续完成 ETTh1 / h24 / Transformer 正式实验
+2. ✅ 继续完成 ETTh1 / h24 / Informer 正式实验
+3. ✅ 继续完成 ETTh1 / h24 / Autoformer 正式实验
+4. ✅ 结合已完成的 LSTM 与 PatchTST，ETTh1 h24 五模型正式结果已齐
+5. ✅ 生成完整正式汇总：`results/formal_seed42_etth1_h24_summary.csv` 与 `.md`
+6. ✅ 所有新结果均直接保存到 `results/h24/ETTh1/{model}/formal_seed42/`
+
+**修改的文件**：
+- `docs/progress.md` - 追加本次正式实验记录
+
+**生成的本地结果文件**：
+- `results/h24/ETTh1/transformer/formal_seed42/ETTh1_h24_transformer_formal_seed42_results.npy`
+- `results/h24/ETTh1/transformer/formal_seed42/ETTh1_h24_transformer_formal_seed42_summary.json`
+- `results/h24/ETTh1/informer/formal_seed42/ETTh1_h24_informer_formal_seed42_results.npy`
+- `results/h24/ETTh1/informer/formal_seed42/ETTh1_h24_informer_formal_seed42_summary.json`
+- `results/h24/ETTh1/autoformer/formal_seed42/ETTh1_h24_autoformer_formal_seed42_results.npy`
+- `results/h24/ETTh1/autoformer/formal_seed42/ETTh1_h24_autoformer_formal_seed42_summary.json`
+- `results/formal_seed42_etth1_h24_summary.csv`
+- `results/formal_seed42_etth1_h24_summary.md`
+
+**正式实验结果**：
+
+| 模型 | MSE | MAE | R² | 最佳验证损失 | 训练轮数 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| PatchTST | 0.380213 | 0.411152 | 0.702517 | 0.444811 | 11 |
+| Autoformer | 0.444251 | 0.446119 | 0.652413 | 0.389005 | 10 |
+| Informer | 0.624358 | 0.549096 | 0.511494 | 0.526139 | 7 |
+| Transformer | 0.743416 | 0.642608 | 0.418342 | 0.627699 | 8 |
+| LSTM | 0.870239 | 0.664989 | 0.319114 | 0.879645 | 11 |
+
+**测试结果**：
+- ✅ ETTh1 h24 正式汇总覆盖 5 个模型
+- ✅ 当前 ETTh1 h24 最低 MSE 模型：PatchTST
+- ✅ 当前 ETTh1 h24 最高 R² 模型：PatchTST
+- ✅ `results/h24/ETTh1/` 下五个模型均有 `formal_seed42` summary
+
+**下一步任务**：
+1. 继续 ETTh1 h48 五模型正式实验
+2. 生成 `formal_seed42_etth1_h48_summary.csv/md`
+3. 按顺序推进 ETTh1 h96/h168/h336
+
+---
+
+## results 目录临时结果清理 ✅
+
+**完成时间**：2026/06/09 11:28
+
+**完成内容**：
+1. ✅ 清理 `results/` 中 quick、quick5、smoke、optv2、default 与 partial 等临时/过渡结果
+2. ✅ 移除整理脚本生成的旧符号链接视图与空目录
+3. ✅ 保留并重建 ETTh1 h24/h48 五模型 `formal_seed42` 正式结果
+4. ✅ 重新生成 h24/h48 正式汇总表
+5. ✅ 更新 `results/RESULTS_INDEX.md` 为当前保留范围
+
+**修改的文件**：
+- `results/RESULTS_INDEX.md` - 更新结果索引与保留范围说明
+- `docs/progress.md` - 追加本次清理记录
+
+**保留的本地结果范围**：
+- `results/h24/ETTh1/{model}/formal_seed42/` - h24 五模型正式结果
+- `results/h48/ETTh1/{model}/formal_seed42/` - h48 五模型正式结果
+- `results/formal_seed42_etth1_h24_summary.csv`
+- `results/formal_seed42_etth1_h24_summary.md`
+- `results/formal_seed42_etth1_h48_summary.csv`
+- `results/formal_seed42_etth1_h48_summary.md`
+
+**测试结果**：
+- ✅ `find results -type l` 确认符号链接数量为 0
+- ✅ `find results -type d -empty` 确认空目录数量为 0
+- ✅ `find results -type f` 确认当前保留 25 个结果相关文件
+- ✅ h24 正式汇总覆盖 5 个模型
+- ✅ h48 正式汇总覆盖 5 个模型
+
+**下一步任务**：
+1. 继续 ETTh1 h96/h168/h336 正式实验
+2. 后续结果统一保存到 `results/h{horizon}/ETTh1/{model}/formal_seed42/`
+
+---
+
+## results Git 追踪同步 ✅
+
+**完成时间**：2026/06/09 11:34
+
+**完成内容**：
+1. ✅ 确认 `.gitignore` 未再忽略 `results/`，结果目录可被 Git 正常追踪
+2. ✅ 将清理后的正式 ETTh1 seed-42 结果范围同步为当前追踪对象：`h24/h48 × 5 个模型`
+3. ✅ 保留聚合汇总文件：`formal_seed42_etth1_h24_summary.*`、`formal_seed42_etth1_h48_summary.*`
+4. ✅ 为 `results/**/*.npy` 增加 `.gitignore` 例外，保证正式结果数组与 JSON 摘要一起被追踪
+5. ✅ 更新 README 中的结果目录说明，明确正式结果纳入追踪、临时 quick/smoke/optv2 结果不保留
+
+**修改的文件**：
+- `.gitignore` - 允许追踪 `results/` 下的正式 `.npy` 结果
+- `README.md` - 同步 results 追踪说明
+- `results/` - 纳入正式结果与结果索引
+- `docs/progress.md` - 追加本次同步记录
+
+**测试结果**：
+- ✅ `git check-ignore` 未命中 `results/RESULTS_INDEX.md` 和正式结果文件
+- ✅ 正式 `.npy` 结果文件已进入 Git 暂存区
+- ✅ `results/` 当前体积约 100K，适合提交到版本库
+
+**下一步任务**：
+1. 提交并推送当前 results 追踪同步变更

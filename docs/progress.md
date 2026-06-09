@@ -923,3 +923,56 @@
 
 **下一步任务**：
 1. 提交并推送当前 results 追踪同步变更
+
+---
+
+## ETTh1 h96/h168/h336 正式实验完成 ✅
+
+**完成时间**：2026/06/09
+
+**完成内容**：
+1. ✅ 运行 ETTh1 h96 五模型正式实验（LSTM/Transformer/Informer/Autoformer/PatchTST）
+2. ✅ 运行 ETTh1 h168 五模型正式实验
+3. ✅ 运行 ETTh1 h336 五模型正式实验
+4. ✅ 生成 h96/h168/h336 各步长汇总表
+5. ✅ 生成 ETTh1 全五步长总汇总：`formal_seed42_etth1_all_summary.csv/md`
+
+**修改的文件**：
+- `docs/progress.md` - 追加本次正式实验记录
+
+**生成的本地结果文件**：
+- `results/h96/ETTh1/{model}/formal_seed42/` - h96 五模型正式结果
+- `results/h168/ETTh1/{model}/formal_seed42/` - h168 五模型正式结果
+- `results/h336/ETTh1/{model}/formal_seed42/` - h336 五模型正式结果
+- `results/formal_seed42_etth1_h96_summary.csv/md`
+- `results/formal_seed42_etth1_h168_summary.csv/md`
+- `results/formal_seed42_etth1_h336_summary.csv/md`
+- `results/formal_seed42_etth1_all_summary.csv/md`
+
+**正式实验结果（ETTh1 全五步长）**：
+
+| Horizon | 最低 MSE 模型 | MSE | MAE | R² |
+| ---: | --- | ---: | ---: | ---: |
+| 24 | PatchTST | 0.380213 | 0.411152 | 0.702517 |
+| 48 | PatchTST | 0.420251 | 0.432552 | 0.670760 |
+| 96 | PatchTST | 0.483175 | 0.472237 | 0.621377 |
+| 168 | PatchTST | 0.513911 | 0.489040 | 0.597451 |
+| 336 | PatchTST | 0.594367 | 0.545011 | 0.532757 |
+
+**主要发现**：
+1. PatchTST 在所有 5 个步长上均为最佳，MSE 持续最低、R² 持续最高
+2. Autoformer 稳定排名第二，h24/h48/h96/h168/h336 均为次低 MSE
+3. Transformer 在 h48 开始明显退化（R²=0.004），h168/h336 R² 为负
+4. LSTM 在长步长表现最差，h168 R²=-0.021，h336 R²=0.121
+5. Informer 在中长步长退化严重，h168 R²=0.069
+
+**测试结果**：
+- ✅ h96/h168/h336 各 5 个模型全部完成训练并保存结果
+- ✅ 每个 `results/h{horizon}/ETTh1/{model}/formal_seed42/` 下同时存在 `_results.npy` 和 `_summary.json`
+- ✅ 汇总结果只包含 `formal_seed42`，未混入 quick/smoke/optv2
+- ✅ ETTh1 全五步长总汇总覆盖 25 个实验组合
+
+**下一步任务**：
+1. 提交 ETTh1 全部正式结果
+2. 开始 ETTm1 五步长正式实验
+3. ETTh1/ETTm1 完成后生成跨数据集总表

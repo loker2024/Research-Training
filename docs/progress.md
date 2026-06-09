@@ -976,3 +976,50 @@
 1. 提交 ETTh1 全部正式结果
 2. 开始 ETTm1 五步长正式实验
 3. ETTh1/ETTm1 完成后生成跨数据集总表
+
+---
+
+## ETTm1 五步长正式实验完成 ✅
+
+**完成时间**：2026/06/09
+
+**完成内容**：
+1. ✅ 运行 ETTm1 h24/h48/h96/h168/h336 五模型正式实验（LSTM/Transformer/Informer/Autoformer/PatchTST）
+2. ✅ 生成 ETTm1 各步长汇总表和全五步长总汇总
+3. ✅ 生成 ETTh1 + ETTm1 跨数据集总汇总：`formal_seed42_all_summary.csv/md`
+
+**修改的文件**：
+- `docs/progress.md` - 追加本次正式实验记录
+
+**生成的本地结果文件**：
+- `results/h{24,48,96,168,336}/ETTm1/{model}/formal_seed42/` - ETTm1 全五步长正式结果
+- `results/formal_seed42_ettm1_h{24,48,96,168,336}_summary.csv/md`
+- `results/formal_seed42_ettm1_all_summary.csv/md`
+- `results/formal_seed42_all_summary.csv/md` (ETTh1 + ETTm1)
+
+**正式实验结果（ETTm1 全五步长）**：
+
+| Horizon | 最低 MSE 模型 | MSE | MAE | R² |
+| ---: | --- | ---: | ---: | ---: |
+| 24 | Autoformer | 0.307059 | 0.351648 | 0.758935 |
+| 48 | Autoformer | 0.447473 | 0.439475 | 0.648585 |
+| 96 | Autoformer | 0.460524 | 0.452287 | 0.637520 |
+| 168 | Autoformer | 0.508573 | 0.480255 | 0.599255 |
+| 336 | Autoformer | 0.554604 | 0.507802 | 0.562683 |
+
+**主要发现**：
+1. ETTm1 上 Autoformer 表现最佳，所有步长均为最低 MSE
+2. PatchTST 在 ETTm1 上紧随 Autoformer，h24/h48/h96/h168/h336 均为次低 MSE
+3. 与 ETTh1 不同，ETTm1 上 Autoformer 优于 PatchTST
+4. Transformer/LSTM/Informer 在长步长退化严重
+5. ETTm1 整体 MSE 低于 ETTh1（数据量更大，预测更稳定）
+
+**测试结果**：
+- ✅ ETTm1 全五步长 25 个实验组合全部完成
+- ✅ 每个 `results/h{horizon}/ETTm1/{model}/formal_seed42/` 下同时存在 `_results.npy` 和 `_summary.json`
+- ✅ 跨数据集总汇总覆盖 50 个实验组合（2 数据集 × 5 步长 × 5 模型）
+
+**下一步任务**：
+1. 提交 ETTm1 全部正式结果
+2. 按计划 ECL 暂不进入主正式矩阵，等 ETTh1/ETTm1 完成后做高维可行性 smoke 或附录实验
+3. 进入步骤 5 消融实验设计

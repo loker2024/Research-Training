@@ -29,7 +29,11 @@ def load_rows(
     run_tags: set[str],
 ) -> list[dict]:
     rows = []
-    for path in sorted(results_dir.glob("*_summary.json")):
+    for path in sorted(results_dir.rglob("*_summary.json")):
+        if path.is_symlink():
+            continue
+        if "/by_horizon/" in path.as_posix() or "/by_model/" in path.as_posix():
+            continue
         data = json.loads(path.read_text(encoding="utf-8"))
         dataset = data["dataset"]
         horizon = int(data["horizon"])

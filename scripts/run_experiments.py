@@ -184,7 +184,8 @@ def run_one(args, dataset_name: str, horizon: int, model_name: str) -> dict:
         data_dir = ROOT / data_dir
     tag = f"_{args.run_tag}" if args.run_tag else ""
     run_name = f"{dataset_name}_h{horizon}_{model_name}{tag}"
-    output_dir = ROOT / "results"
+    run_tag_dir = args.run_tag or "default"
+    output_dir = ROOT / "results" / f"h{horizon}" / dataset_name / model_name / run_tag_dir
     result_path = output_dir / f"{run_name}_results.npy"
     summary_path = output_dir / f"{run_name}_summary.json"
 
@@ -250,7 +251,7 @@ def run_one(args, dataset_name: str, horizon: int, model_name: str) -> dict:
         "best_val_r2": history["best_val_r2"],
     }
 
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
     np.save(result_path, result, allow_pickle=True)
     summary_path.write_text(
         json.dumps(to_jsonable({k: v for k, v in result.items() if k != "history"}), ensure_ascii=False, indent=2),

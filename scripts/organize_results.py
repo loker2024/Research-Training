@@ -1,11 +1,11 @@
-"""Organize result files into browsable views.
+"""Organize legacy top-level result files into horizon folders.
 
-The canonical result files stay at the top level of results/. This script creates
-lightweight links under:
+New experiment results are written directly to:
 
-- results/by_horizon/h{horizon}/{dataset}/{model}/{run_tag}/
-- results/by_model/{model}/{dataset}/h{horizon}/{run_tag}/
-- results/summaries/
+- results/h{horizon}/{dataset}/{model}/{run_tag}/
+
+This script keeps older top-level result files discoverable by linking them into
+the same horizon-first layout and linking aggregate tables under results/summaries/.
 """
 
 from __future__ import annotations
@@ -59,8 +59,7 @@ def classify_result_pair(summary_path: Path, mode: str, overwrite: bool) -> int:
         sources.append(result_path)
 
     destinations = [
-        RESULTS_DIR / "by_horizon" / f"h{horizon}" / dataset / model / run_tag,
-        RESULTS_DIR / "by_model" / model / dataset / f"h{horizon}" / run_tag,
+        RESULTS_DIR / f"h{horizon}" / dataset / model / run_tag,
     ]
 
     created = 0
@@ -84,12 +83,12 @@ def write_index(total_runs: int, total_summary_files: int) -> None:
     lines = [
         "# Results Index",
         "",
-        "Canonical result files remain in the top-level `results/` directory.",
+        "New result files are written directly into horizon-first folders.",
+        "Legacy top-level result files are linked into the same layout.",
         "",
         "Browse classified views:",
         "",
-        "- `by_horizon/h{horizon}/{dataset}/{model}/{run_tag}/`",
-        "- `by_model/{model}/{dataset}/h{horizon}/{run_tag}/`",
+        "- `h{horizon}/{dataset}/{model}/{run_tag}/`",
         "- `summaries/`",
         "",
         f"Indexed experiment summaries: {total_runs}",
@@ -100,7 +99,7 @@ def write_index(total_runs: int, total_summary_files: int) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Organize result files by horizon and model")
+    parser = argparse.ArgumentParser(description="Organize legacy result files by horizon")
     parser.add_argument("--mode", choices=["symlink", "hardlink", "copy"], default="symlink")
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()

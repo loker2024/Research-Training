@@ -1023,3 +1023,322 @@
 1. 提交 ETTm1 全部正式结果
 2. 按计划 ECL 暂不进入主正式矩阵，等 ETTh1/ETTm1 完成后做高维可行性 smoke 或附录实验
 3. 进入步骤 5 消融实验设计
+
+---
+
+## 步骤 5：消融实验 🔄
+
+**开始时间**：2026/06/09
+
+**消融设计**：
+围绕 Autoformer 和 PatchTST 验证关键模块贡献，共 4 个消融变体：
+
+| 消融模型 | 目标模块 | 消融方式 |
+|----------|----------|----------|
+| `autoformer_no_decomp` | Series Decomposition | 关闭分解，趋势分支置零 |
+| `autoformer_no_autocorr` | Auto-Correlation | 替换为标准多头自注意力 |
+| `patchtst_no_patch` | Patching | 逐时间点线性投影替代 patch embedding |
+| `patchtst_channel_mix` | Channel Independence | 混合多变量输入替代独立建模 |
+
+**实验范围**：2 数据集 × 2 步长 × 4 消融模型 = 16 个实验
+- 数据集：ETTh1、ETTm1
+- 步长：h96、h336
+- 训练参数：epochs=20、patience=5、batch_size=32、lr=0.001、seed=42
+
+**完成内容**：
+1. ✅ 创建 `models/ablation.py`，实现 4 个消融模型变体
+2. ✅ 更新 `models/__init__.py`，导出消融模型
+3. ✅ 更新 `scripts/run_experiments.py`，在 MODEL_BUILDERS 中添加 4 个消融模型
+4. ✅ 创建 `configs/ablation_etth1_ettm1.json` 正式消融配置
+5. ✅ 创建 `configs/ablation_smoke.json` 消融 smoke 配置
+6. ✅ 编译验证通过（`py_compile` 4 个消融模型 + 脚本）
+7. ✅ 前向 shape smoke test 全部通过（8 个组合：4 模型 × 2 步长）
+8. ✅ 训练 smoke test 通过（ETTh1 h96、epochs=1、sample_limit=128）
+9. ✅ ETTh1 h96 正式消融实验完成（4 个模型）
+10. ✅ ETTh1 h336 正式消融实验完成（4 个模型）
+11. ⏸ ETTm1 h96 部分完成（autoformer_no_decomp、autoformer_no_autocorr）
+12. ⏸ ETTm1 h336 未开始
+
+**当前进度：10/16 完成**
+
+| 数据集 | 步长 | 状态 | 已完成模型 |
+|--------|------|------|-----------|
+| ETTh1 | h96 | ✅ 完成 | 全部 4 个 |
+| ETTh1 | h336 | ✅ 完成 | 全部 4 个 |
+| ETTm1 | h96 | ⏸ 部分 | autoformer_no_decomp, autoformer_no_autocorr |
+| ETTm1 | h336 | ❌ 未开始 | — |
+
+**修改的文件**：
+- `models/ablation.py` - 新增 4 个消融模型变体
+- `models/__init__.py` - 导出消融模型
+- `scripts/run_experiments.py` - 添加消融模型 builder
+- `configs/ablation_etth1_ettm1.json` - 正式消融配置
+- `configs/ablation_smoke.json` - 消融 smoke 配置
+- `docs/progress.md` - 追加本次消融实验记录
+
+**下一步任务**：
+1. 继续完成剩余 6 个消融实验（ETTm1 h96 剩余 2 个 + ETTm1 h336 全部 4 个）
+2. 生成 `results/ablation_seed42_summary.csv/md`
+3. 生成消融与正式实验对比表（MSE、MAE、R²、参数量、训练耗时）
+4. 更新 README.md 补充消融实验运行命令
+
+---
+
+## 消融实验运行脚本检查 ✅
+
+**完成时间**：2026-06-09 20:55:27 +08:00
+
+**完成内容**：
+1. ✅ 检查 `scripts/run_experiments.py` 的消融模型入口，确认 4 个消融模型已注册到 `MODEL_BUILDERS`
+2. ✅ 检查 `configs/ablation_etth1_ettm1.json`，确认正式消融范围为 ETTh1/ETTm1 × h96/h336 × 4 模型，共 16 组
+3. ✅ 检查 `skip_existing=true`，确认中断续跑会跳过已有完整 `_results.npy` 和 `_summary.json` 的组合
+4. ✅ 核对当前结果目录，确认正式消融已完成 10/16，剩余 6 组均在 ETTm1
+
+**修改的文件**：
+- `docs/progress.md` - 追加本次脚本检查记录
+
+**测试结果**：
+- ✅ `python -m py_compile scripts\run_experiments.py models\ablation.py scripts\summarize_results.py` 通过
+- ✅ 当前 Python 环境可导入 `torch`、`numpy`、`pandas`
+- ✅ 4 个消融模型在输入 `(2, 96, 7)` 下，对 h96/h336 均输出 `(2, horizon, 7)`
+- ✅ `ETTm1 h336` 预处理数据可加载，原始 train/val/test 样本量为 34129/11089/23169
+
+**下一步任务**：
+1. 运行 `python scripts/run_experiments.py --config configs/ablation_etth1_ettm1.json` 续跑剩余 6 组
+2. 消融完成后生成 `results/ablation_seed42_summary.csv/md`
+3. 生成消融与 `formal_seed42` 原模型对比表
+
+---
+
+## 步骤 5：消融实验完成 ✅
+
+**完成时间**：2026-06-10
+
+**完成内容**：
+1. ✅ 继续核对正式消融结果目录，确认已完成 14/16，剩余为 `ETTm1 h336` 的两个 PatchTST 消融变体
+2. ✅ 定位 Windows CUDA 环境为 `C:\Users\LOKER\.conda\envs\myenv`，确认 PyTorch 为 `2.10.0+cu126` 且 `torch.cuda.is_available() == True`
+3. ✅ 关闭误用 CPU 版 `D:\Development\Miniconda3\python.exe` 启动的残留训练进程，避免 CPU 持续满载和重复写结果
+4. ✅ 使用 CUDA 环境完成 `ETTm1 h336 patchtst_no_patch` 与 `ETTm1 h336 patchtst_channel_mix` 两组消融实验
+5. ✅ 生成 16 组完整消融汇总：`results/ablation_seed42_summary.csv/md`
+6. ✅ 生成消融与原模型正式结果对比表：`results/ablation_seed42_vs_formal_comparison.csv/md`
+7. ✅ 更新 README，补充消融实验运行、CUDA 检查和汇总命令
+
+**修改的文件**：
+- `configs/ablation_remaining_ettm1_h336.json` - 新增剩余两组消融续跑配置
+- `results/ablation_seed42_summary.csv` - 新增完整消融汇总
+- `results/ablation_seed42_summary.md` - 新增完整消融汇总
+- `results/ablation_seed42_vs_formal_comparison.csv` - 新增消融与原模型对比表
+- `results/ablation_seed42_vs_formal_comparison.md` - 新增消融与原模型对比表
+- `README.md` - 补充消融实验与 CUDA 环境检查命令
+- `docs/progress.md` - 追加本次消融完成记录
+
+**测试结果**：
+- ✅ 消融正式结果覆盖 16/16 个组合（2 数据集 × 2 步长 × 4 消融模型）
+- ✅ 最后两组训练日志显示 `设备: cuda`
+- ✅ 当前无残留 Python 训练进程
+- ✅ `results/h336/ETTm1/{patchtst_no_patch,patchtst_channel_mix}/ablation_seed42/` 下均存在 `_results.npy` 和 `_summary.json`
+
+**关键结果摘要**：
+
+| 数据集 | 步长 | 消融模型 | MSE | MAE | R² |
+| --- | ---: | --- | ---: | ---: | ---: |
+| ETTh1 | 96 | autoformer_no_autocorr | 0.542886 | 0.514618 | 0.574587 |
+| ETTh1 | 96 | autoformer_no_decomp | 1.011054 | 0.783477 | 0.207723 |
+| ETTh1 | 96 | patchtst_no_patch | 0.519393 | 0.496346 | 0.592996 |
+| ETTh1 | 96 | patchtst_channel_mix | 1.888603 | 1.028806 | -0.479937 |
+| ETTh1 | 336 | autoformer_no_autocorr | 0.628062 | 0.573486 | 0.506269 |
+| ETTh1 | 336 | autoformer_no_decomp | 1.509056 | 0.933451 | -0.186297 |
+| ETTh1 | 336 | patchtst_no_patch | 0.597170 | 0.551790 | 0.530554 |
+| ETTh1 | 336 | patchtst_channel_mix | 1.505545 | 0.964119 | -0.183537 |
+| ETTm1 | 96 | autoformer_no_autocorr | 0.471790 | 0.449523 | 0.628652 |
+| ETTm1 | 96 | autoformer_no_decomp | 0.630229 | 0.544506 | 0.503944 |
+| ETTm1 | 96 | patchtst_no_patch | 0.557235 | 0.477739 | 0.561398 |
+| ETTm1 | 96 | patchtst_channel_mix | 0.863672 | 0.645347 | 0.320201 |
+| ETTm1 | 336 | autoformer_no_autocorr | 0.574457 | 0.517217 | 0.547029 |
+| ETTm1 | 336 | autoformer_no_decomp | 1.120854 | 0.744612 | 0.116183 |
+| ETTm1 | 336 | patchtst_no_patch | 0.597408 | 0.517521 | 0.528932 |
+| ETTm1 | 336 | patchtst_channel_mix | 1.228966 | 0.830648 | 0.030934 |
+
+**主要发现**：
+1. Autoformer 的序列分解模块贡献显著，移除分解后 MSE 在 4 个组合中上升约 36.9% 到 118.9%
+2. Auto-Correlation 在 ETTm1 上略优于标准注意力；但 ETTh1 上 `autoformer_no_autocorr` 反而略低于当前轻量 Autoformer，提示当前 Autoformer 实现或超参仍有优化空间
+3. PatchTST 的 Channel Independence 贡献非常明显，混合通道后 MSE 在 4 个组合中上升约 85.0% 到 290.9%
+4. Patching 对 h96 更有帮助；在 ETTh1 h336 上移除 patch 后 MSE 仅上升 0.47%，说明该数据集长步长下 patch 设置可继续调参
+
+**下一步任务**：
+1. 进入步骤 6：可视化与深入分析
+2. 基于 `formal_seed42_all_summary` 和 `ablation_seed42_vs_formal_comparison` 绘制模型性能、步长趋势与消融影响图
+3. 为实验报告整理核心结论和表格
+
+---
+
+## 步骤 6：可视化与深入分析 ✅
+
+**完成时间**：2026-06-10 09:16:46 +08:00
+
+**完成内容**：
+1. ✅ 按已有计划文档格式新增 `docs/plan2026061001.md`
+2. ✅ 新增 `scripts/visualize_results.py`，读取正式实验和消融对比 CSV，生成报告用图表
+3. ✅ 生成核心指标趋势图、各 horizon 最优模型图、复杂度对比图和消融 MSE 变化图
+4. ✅ 基于已有 `formal_seed42` checkpoint 进行测试集首批样本推理，生成预测值 vs 真实值曲线和残差图
+5. ✅ 使用 `data/processed/{dataset}/scaler.npz` 对目标列进行反归一化，图中展示原始量纲目标值
+6. ✅ 新增 `docs/analysis_step6.md`，整理核心实验、消融实验、预测曲线和残差分析结论
+7. ✅ 更新 README，补充第 6 步可视化命令和输出说明
+
+**修改的文件**：
+- `docs/plan2026061001.md` - 新增第 6 步实施计划
+- `scripts/visualize_results.py` - 新增可视化和 checkpoint 推理脚本
+- `docs/analysis_step6.md` - 新增第 6 步分析文档
+- `README.md` - 补充第 6 步可视化命令
+- `docs/progress.md` - 追加本次可视化与深入分析记录
+- `results/figures/` - 新增 12 张图表、`manifest.json` 和 `prediction_samples_summary.csv`
+
+**测试结果**：
+- ✅ `python -m py_compile scripts\visualize_results.py` 通过
+- ✅ `python scripts\visualize_results.py` 成功生成 12 张图表
+- ✅ checkpoint 推理未触发训练，四个样本输出 shape 与 horizon 一致：
+  - `ETTh1 h96 patchtst`：prediction/target = `32x96x7`
+  - `ETTh1 h336 patchtst`：prediction/target = `32x336x7`
+  - `ETTm1 h96 autoformer`：prediction/target = `32x96x7`
+  - `ETTm1 h336 autoformer`：prediction/target = `32x336x7`
+- ✅ `results/figures/manifest.json` 记录全部图表路径
+- ✅ 抽查 `formal_metric_trends.png` 和 `prediction_ETTh1_h96_patchtst.png` 渲染正常
+
+**关键结果摘要**：
+1. ETTh1 五个预测步长均由 PatchTST 取得最低 MSE
+2. ETTm1 五个预测步长均由 Autoformer 取得最低 MSE
+3. 50 组正式结果中，PatchTST 平均 MSE 最低（0.469335），Autoformer 次之（0.514711）
+4. PatchTST Channel Independence 消融平均使 MSE 上升 162.25%，是贡献最显著的 PatchTST 模块
+5. Autoformer 序列分解消融平均使 MSE 上升 81.48%，证明分解模块对长步长预测非常关键
+
+**下一步任务**：
+1. 进入步骤 7：撰写实验报告
+2. 将 `docs/analysis_step6.md` 中的图表和结论整合进最终报告
+3. 根据报告结构补充实验设置、模型介绍、结果讨论、消融分析和结论展望
+
+---
+
+## 步骤 6 补充：可视化 Notebook ✅
+
+**完成时间**：2026-06-10 09:22:37 +08:00
+
+**完成内容**：
+1. ✅ 新增 `notebooks/visualize_results.ipynb`，作为 `scripts/visualize_results.py` 的交互式 notebook 版本
+2. ✅ Notebook 复用脚本函数生成同一批图表，避免脚本和 notebook 维护两套可视化逻辑
+3. ✅ Notebook 包含结果表读取、汇总图表生成、checkpoint 推理、预测 shape 展示、核心图表预览和预测/残差图预览
+4. ✅ 更新 README，补充 notebook 入口
+
+**修改的文件**：
+- `notebooks/visualize_results.ipynb` - 新增第 6 步可视化 notebook
+- `README.md` - 补充 notebook 版本入口
+- `docs/progress.md` - 追加本次 notebook 补充记录
+
+**测试结果**：
+- ✅ Notebook JSON 可正常解析，`nbformat=4`
+- ✅ Notebook 共 16 个单元，其中 7 个代码单元均通过 Python AST 编译检查
+- ✅ Notebook 复用已有脚本入口，不会重新训练模型
+
+**下一步任务**：
+1. 进入步骤 7：撰写实验报告
+2. 报告撰写时可优先使用 `notebooks/visualize_results.ipynb` 交互式检查图表，再引用 `results/figures/` 中的静态图片
+
+---
+
+## 步骤 7：实验报告草稿 ✅
+
+**完成时间**：2026-06-10 09:26:43 +08:00
+
+**完成内容**：
+1. ✅ 分析当前进度，确认步骤 1-6 已完成，下一步为步骤 7：撰写实验报告
+2. ✅ 按已有计划文档格式新增 `docs/plan2026061002.md`
+3. ✅ 新增 `docs/experiment_report_step7.md`，形成 Markdown 实验报告草稿
+4. ✅ 报告整合研究背景、数据集、实验设置、模型方法、核心结果、预测曲线、残差分析、消融实验、复杂度分析、误差累积、季节波动性、超参数经验、结论与展望
+5. ✅ 报告直接引用 `results/figures/` 中的核心图表，并列出主要结果文件
+6. ✅ 更新 README，补充第 7 步报告草稿入口
+
+**修改的文件**：
+- `docs/plan2026061002.md` - 新增第 7 步报告撰写计划
+- `docs/experiment_report_step7.md` - 新增实验报告 Markdown 草稿
+- `README.md` - 补充第 6 步分析和第 7 步报告入口
+- `docs/progress.md` - 追加本次报告草稿记录
+
+**测试结果**：
+- ✅ `docs/experiment_report_step7.md` 共 201 行，结构完整
+- ✅ 报告中 10 个 `results/figures/*.png` 图片引用均存在
+- ✅ 报告附录中列出的 8 个结果文件均存在
+- ✅ 未触发训练、未覆盖已有实验结果
+
+**关键结果摘要**：
+1. 报告主结论：ETTh1 上 PatchTST 五个步长均最优，ETTm1 上 Autoformer 五个步长均最优
+2. 报告消融结论：PatchTST channel independence 与 Autoformer series decomposition 是贡献最显著模块
+3. 报告讨论重点：长步长预测存在误差累积，强模型仍会在远期细节和突变位置出现偏差
+
+**下一步任务**：
+1. 对 `docs/experiment_report_step7.md` 做语言润色和格式整理
+2. 如需提交 Word/PDF，可将 Markdown 报告转换为 DOCX/PDF
+3. 视时间补充 ECL 高维 smoke/附录实验，或补充多随机种子稳定性实验
+
+---
+
+## 实验论文稿撰写 ✅
+
+**完成时间**：2026-06-10 09:58:37 +08:00
+
+**完成内容**：
+1. ✅ 基于项目已有参考资料、模型介绍、核心实验结果、消融结果和可视化分析，新增中文实验论文稿
+2. ✅ 将报告式材料重组为论文结构：摘要、关键词、引言、相关工作、方法、实验设置、结果分析、消融实验、讨论、结论、参考文献和附录
+3. ✅ 明确论文主结论：ETTh1 上 PatchTST 五个步长均最优，ETTm1 上 Autoformer 五个步长均最优
+4. ✅ 写入证据边界：当前主结果覆盖 ETTh1/ETTm1、单随机种子 seed=42，ECL 高维完整实验留作后续补充
+5. ✅ 修正 README 当前进度中的失效报告链接，补充实验论文稿入口
+
+**修改的文件**：
+- `docs/experiment_paper.md` - 新增实验论文 Markdown 稿
+- `README.md` - 更新第 6 步分析、实验报告和实验论文入口
+- `docs/progress.md` - 追加本次论文撰写记录
+
+**测试结果**：
+- ✅ 论文引用的 8 张 `results/figures/*.png` 图表均来自已有可视化结果
+- ✅ 论文中的核心数值来自 `results/formal_seed42_all.csv` 与 `results/ablation_seed42_vs_formal_comparison.csv`
+- ✅ 未重新训练模型，未覆盖已有实验结果
+
+**下一步任务**：
+1. 如需提交课程小论文，可根据 `参考资料/模版和其他资料/小论文模板-2026.doc` 调整格式并转换为 DOCX
+2. 可继续补充作者、单位、基金/致谢和目标期刊/课程格式要求
+3. 若时间允许，补充 ECL 高维实验或多随机种子结果以增强论文稳健性
+
+---
+
+## 相关论文理解：Informer / Autoformer / PatchTST ✅
+
+**完成时间**：2026-06-10
+
+**完成内容**：
+1. ✅ 使用 `/paper-fast-understanding` Skill 逐篇阅读三篇 Transformer 变体论文 PDF
+2. ✅ 联网补充三篇论文的官方代码仓库、引用数、附录信息
+3. ✅ 按 Skill 模板生成三层理解文档（30 秒速览 → 5 分钟理解 → 复现指南），包含双视角分析
+4. ✅ 三份理解文档保存到 `相关论文/理解/` 目录
+
+**生成文件**：
+- `相关论文/理解/Informer_理解.md` — Informer 论文完整理解（约 350 行）
+- `相关论文/理解/Autoformer_理解.md` — Autoformer 论文完整理解（约 380 行）
+- `相关论文/理解/PatchTST_理解.md` — PatchTST 论文完整理解（约 360 行）
+
+**理解要点总结**：
+
+| 论文 | 核心创新 | 最大贡献 | 关键局限 |
+|------|----------|----------|----------|
+| Informer | ProbSparse 自注意力 + 生成式解码器 | 首次系统解决 Transformer 长序列预测的 O(L²) 瓎节 | 稀疏查询可能丢失低频模式；蒸馏不可逆 |
+| Autoformer | 深度分解架构 + 自相关机制 | 将经典时序分解内嵌到架构每层；频域周期性建模 | 移动平均趋势假设简化；FFT 对非平稳数据理论保证弱 |
+| PatchTST | Patch 分割 + 通道独立 | 从逐点建模转向局部块建模；实验证明通道独立优于混合 | Patch 大小需手动设定；通道独立忽略跨变量交互 |
+
+**复现关键信息**：
+
+| 论文 | 官方代码 | 优化器 | 关键超参 |
+|------|----------|--------|----------|
+| Informer | zhouhaoyi/Informer2020 | Adam (lr=1e-4) | c=5, e_layers=2, d_layers=1, d_model=512 |
+| Autoformer | thuml/Autoformer | Adam | moving_avg=25, factor=1, e_layers=2, d_layers=1 |
+| PatchTST | yuqie98/PatchTST | AdamW | patch_len=16, stride=8, e_layers=3, channel_independent=True |
+
+**下一步任务**：
+1. 对照理解文档检查项目模型实现的细节是否与论文一致
+2. 如发现偏差，可参照理解文档中的复现指南修正

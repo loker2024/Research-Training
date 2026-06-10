@@ -1,0 +1,18 @@
+{
+  "datasets": "ETTh1",
+  "horizons": "96",
+  "models": "autoformer_no_decomp,autoformer_no_autocorr,patchtst_no_patch,patchtst_channel_mix",
+  "epochs": 1,
+  "patience": 3,
+  "batch_size": 32,
+  "lr": 0.001,
+  "weight_decay": 0.00001,
+  "device": "auto",
+  "seed": 42,
+  "run_tag": "ablation_smoke",
+  "data_dir": "data/processed",
+  "sample_limit": 128,
+  "num_workers": 0,
+  "no_tensorboard": true,
+  "skip_existing": false
+}

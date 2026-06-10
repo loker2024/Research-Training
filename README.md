@@ -39,7 +39,10 @@ pip install -r requirements.txt
 # Mac
 conda activate miniMac
 
-# Windows
+# Windows（若 myenv 是 Conda 环境）
+conda activate myenv
+
+# Windows（若 myenv 在项目根目录）
 myenv\Scripts\activate
 ```
 
@@ -62,6 +65,25 @@ python scripts/run_experiments.py --config configs/core_experiment_smoke.json
 
 # ETTh1/ETTm1 正式核心实验配置（运行时间较长）
 python scripts/run_experiments.py --config configs/core_experiment_etth1_ettm1_formal.json
+
+# Autoformer/PatchTST 消融实验（建议确认 CUDA 环境后运行）
+python -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))"
+python scripts/run_experiments.py --config configs/ablation_etth1_ettm1.json
+python scripts/summarize_results.py \
+  --datasets ETTh1,ETTm1 \
+  --horizons 96,336 \
+  --models autoformer_no_decomp,autoformer_no_autocorr,patchtst_no_patch,patchtst_channel_mix \
+  --run-tags ablation_seed42 \
+  --output-prefix ablation_seed42_summary
+
+# 第 6 步：生成报告用可视化图表与预测/残差分析
+# 该脚本只读取已有 CSV、checkpoint 和测试集，不会重新训练模型
+python -m py_compile scripts/visualize_results.py
+python scripts/visualize_results.py
+
+# 图表输出：results/figures/
+# 分析文档：docs/analysis_step6.md
+# Notebook 版本：notebooks/visualize_results.ipynb
 
 # 中断后续跑：配置文件已默认开启 skip_existing，也可命令行显式开启
 python scripts/run_experiments.py \
@@ -112,4 +134,4 @@ results/
 
 ## 当前进度
 
-进度记录见 `docs/progress.md`，实施步骤见 `docs/项目步骤.md`。
+进度记录见 `docs/progress.md`，实施步骤见 `docs/项目步骤.md`。第 6 步分析见 `docs/analysis_step6.md`，实验报告草稿见 `docs/experiment_report_demo.md`，实验论文稿见 `docs/experiment_paper.md`。

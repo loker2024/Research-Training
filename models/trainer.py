@@ -35,14 +35,18 @@ def resolve_device(device='auto'):
 class Trainer:
     """时序预测模型训练器"""
 
-    def __init__(self, model, device='auto', lr=1e-3, weight_decay=1e-5):
+    def __init__(self, model, device='auto', lr=1e-3, weight_decay=1e-5, seed=216):
         """
         Args:
             model: 模型实例
             device: 设备 ('cuda' 或 'cpu')
             lr: 学习率
             weight_decay: 权重衰减
+            seed: 随机种子，用于保证可复现性
         """
+        self.seed = seed
+        self._set_seed(seed)
+
         self.model = model
         self.device = resolve_device(device)
         self.model.to(self.device)
@@ -64,6 +68,18 @@ class Trainer:
         self.best_val_loss = float('inf')
         self.best_val_r2 = 0.0
         self.best_model_state = None
+
+    @staticmethod
+    def _set_seed(seed):
+        """设置随机种子，保证可复现性"""
+        import random
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
 
     def compute_r2(self, pred, target):
         """计算 R² 决定系数（准确率的一种表示）"""

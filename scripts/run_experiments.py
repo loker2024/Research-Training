@@ -36,6 +36,9 @@ MODEL_BUILDERS = {
     "lstm": lambda input_size, horizon: LSTMModel(
         input_size=input_size, hidden_size=64, num_layers=2, dropout=0.1, horizon=horizon
     ),
+    "lstm_baseline": lambda input_size, horizon: LSTMModel(
+        input_size=input_size, hidden_size=256, num_layers=2, dropout=0.2, horizon=horizon
+    ),
     "transformer": lambda input_size, horizon: TransformerModel(
         input_size=input_size,
         d_model=64,
@@ -178,6 +181,8 @@ def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
 
 def load_config(path: str | None) -> dict:
@@ -249,7 +254,7 @@ def run_one(args, dataset_name: str, horizon: int, model_name: str) -> dict:
     target_idx = base_dataset.target_idx
 
     model = MODEL_BUILDERS[model_name](input_size, horizon)
-    trainer = Trainer(model, device=args.device, lr=args.lr, weight_decay=args.weight_decay)
+    trainer = Trainer(model, device=args.device, lr=args.lr, weight_decay=args.weight_decay, seed=args.seed)
 
     started = time.time()
     history = trainer.train(

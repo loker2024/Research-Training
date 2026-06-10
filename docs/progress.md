@@ -1308,6 +1308,59 @@
 
 ---
 
+## LSTM Baseline 配置选定 ✅
+
+**完成时间**：2026-06-10
+
+**完成内容**：
+1. ✅ 分析 `test_results/h24/ETTh1/lstm/` 下 10 组 LSTM 超参搜索实验结果
+2. ✅ 选定最优 LSTM baseline 配置：hidden_size=256, num_layers=2, dropout=0.2, lr=0.0003, wd=0.0
+3. ✅ 该配置在 10 组实验中综合 MSE/MAE/R² 三项指标同时排名第一
+4. ✅ 新增 `configs/lstm_baseline.json`，记录完整 baseline 配置和参考指标
+5. ✅ 在 `scripts/run_experiments.py` 的 `MODEL_BUILDERS` 中注册 `lstm_baseline` 模型入口
+
+**修改的文件**：
+- `configs/lstm_baseline.json` - 新增 LSTM baseline 最优配置
+- `scripts/run_experiments.py` - 新增 `lstm_baseline` 模型 builder
+- `docs/progress.md` - 追加本次配置选定记录
+
+**选定配置**：
+
+| 参数 | 值 |
+|------|-----|
+| Hidden Size | 256 |
+| Num Layers | 2 |
+| Dropout | 0.2 |
+| Learning Rate | 0.0003 |
+| Weight Decay | 0.0 |
+| Seed | 216 |
+| Epochs | 100 |
+| Patience | 15 |
+| Batch Size | 32 |
+| 模型参数量 (ETTh1) | 906,664 |
+
+**参考指标（ETTh1 h24）**：
+
+| 指标 | 值 |
+|------|-----|
+| MSE | 0.7912 |
+| MAE | 0.6299 |
+| R² | 0.3810 |
+| 最佳 Epoch | 10 |
+| 训练耗时 | 96.41s |
+
+**选择理由**：
+1. 全局 MSE（0.7912）、MAE（0.6299）、R²（0.3810）三项核心指标同时排名第一
+2. dropout=0.2 提供正则化，泛化性好
+3. lr=0.0003 保守稳定，作为 baseline 代表性强
+4. R² 仅 0.38，给后续模型留出充足提升空间
+
+**下一步任务**：
+1. 使用 `lstm_baseline` 配置在所有数据集和步长上跑完整 baseline
+2. 将 baseline 结果与其他模型正式结果对比
+
+---
+
 ## 相关论文理解：Informer / Autoformer / PatchTST ✅
 
 **完成时间**：2026-06-10
@@ -1342,3 +1395,38 @@
 **下一步任务**：
 1. 对照理解文档检查项目模型实现的细节是否与论文一致
 2. 如发现偏差，可参照理解文档中的复现指南修正
+
+---
+
+## 基线训练 Notebook 重构与随机种子控制 ✅
+
+**完成时间**：2026-06-10
+
+**完成内容**：
+1. ✅ 重构 `notebooks/train_baseline.ipynb`：将原来"先训练所有模型、最后统一保存"的流程改为"每个模型训练完立即可视化并保存结果"，便于中断不丢失
+2. ✅ 为 `Trainer.__init__` 新增 `seed=216` 参数，训练前自动设置 `random`/`numpy`/`torch`/`cuda` 随机种子，并启用 `cudnn.deterministic=True` / `cudnn.benchmark=False` 保证可复现
+3. ✅ `notebooks/train_baseline.ipynb` 的 `LSTMConfig` 和 `TransformerConfig` 新增 `seed: int = 216` 字段，创建 Trainer 时传入 `seed=cfg.seed`
+4. ✅ `notebooks/train_variants.ipynb` 配置新增 `SEED = 216`，创建 Trainer 时传入 `seed=SEED`，结果保存写入 `'seed': SEED`
+5. ✅ `scripts/run_experiments.py` 的 `set_seed()` 补上 `cudnn.deterministic=True` / `cudnn.benchmark=False`，创建 Trainer 时传入 `seed=args.seed`
+6. ✅ 保存结果文件名末尾追加时间戳（格式 `_YYYYMMDD_HHMMSS`），避免覆盖历史结果
+7. ✅ 所有保存结果中的 `"seed"` 字段从写死 `None` 改为读取实际传入值
+
+**修改的文件**：
+- `models/trainer.py` - 新增 `seed` 参数和 `_set_seed()` 静态方法
+- `notebooks/train_baseline.ipynb` - 重构流程、Config 加 seed、Trainer 传 seed、保存加时间戳
+- `notebooks/train_variants.ipynb` - 配置加 SEED、Trainer 传 seed、结果加 seed 字段
+- `scripts/run_experiments.py` - `set_seed()` 加 cudnn 控制、Trainer 传 seed
+- `docs/progress.md` - 追加本次记录
+
+**背景原因**：
+- 原先 LSTM ETTh1 h24 同配置跑 3 次结果差异较大（MSE_target 从 0.134 到 0.223），根因是未设随机种子
+- 原先 notebook 流程是先训练两个模型再统一保存，如果中途崩溃会丢失所有结果
+
+**测试结果**：
+- ✅ `Trainer(model, device='cuda', lr=1e-3, seed=216)` 正常初始化并设置种子
+- ✅ 同配置两次运行 LSTM ETTh1 h24 结果一致（MSE_target 和 R²_target 完全相同）
+- ✅ 保存文件名示例：`ETTh1_h24_lstm_20260610_143025_summary.json`
+
+**下一步任务**：
+1. 使用固定种子重新跑基线实验，获得可复现的正式结果
+2. 将 notebook 训练结果与脚本 `run_experiments.py` 结果交叉验证

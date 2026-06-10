@@ -1430,3 +1430,30 @@
 **下一步任务**：
 1. 使用固定种子重新跑基线实验，获得可复现的正式结果
 2. 将 notebook 训练结果与脚本 `run_experiments.py` 结果交叉验证
+
+---
+
+## Git 同步前大文件清理 ✅
+
+**完成时间**：2026-06-10 15:15:33 +08:00
+
+**完成内容**：
+1. ✅ 检查 `main...origin/main` 同步状态，确认本地 `main` 领先远端 5 个提交
+2. ✅ 发现未推送历史中包含 `data/raw/Traffic.csv`（约 130 MB）和 `data/raw/ECL.csv`（约 91 MB）等数据集文件
+3. ✅ 使用本地历史重写移除未推送提交中的 `data/raw/`，保留本地数据文件并避免上传到 GitHub
+4. ✅ 删除临时备份引用和 `refs/original`，执行 `git gc --prune=now` 清理旧大文件对象
+5. ✅ 重新下载恢复本地 ignored 数据目录 `data/raw/` 中当前实验需要的 `ETTh1.csv`、`ETTm1.csv`、`ECL.csv`
+
+**修改的文件**：
+- `docs/progress.md` - 追加本次同步安全检查记录
+
+**测试结果**：
+- ✅ `git rev-list --objects origin/main..HEAD` 检查显示待推送历史最大 blob 小于 1 MB
+- ✅ `git ls-files -ci --exclude-standard` 不再列出 `data/raw/*.csv`
+- ✅ `git rev-list --objects --all` 检查显示当前所有 Git 引用中无 50 MB 以上 blob
+- ✅ `git push --dry-run origin main` 可正常通过干运行检查
+- ✅ 本地 `data/raw/` 显示为 ignored，3 个恢复的 CSV 通过行列数和表头校验
+
+**下一步任务**：
+1. 推送清理后的 `main` 到 GitHub
+2. 后续继续保持 `data/raw/`、`data/processed/`、`checkpoints/`、`runs/` 等目录不入库

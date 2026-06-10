@@ -36,3 +36,6 @@ events.out.tfevents.*
 
 # Generated visual summaries.
 combined_visualization.png
+
+
+/data/raw/

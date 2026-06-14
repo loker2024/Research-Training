@@ -39,6 +39,9 @@ MODEL_BUILDERS = {
     "lstm_baseline": lambda input_size, horizon: LSTMModel(
         input_size=input_size, hidden_size=256, num_layers=2, dropout=0.2, horizon=horizon
     ),
+    "lstm_top1": lambda input_size, horizon: LSTMModel(
+        input_size=input_size, hidden_size=256, num_layers=1, dropout=0.2, horizon=horizon
+    ),
     "transformer": lambda input_size, horizon: TransformerModel(
         input_size=input_size,
         d_model=64,
@@ -74,6 +77,15 @@ MODEL_BUILDERS = {
         n_heads=4,
         n_layers=2,
         d_ff=128,
+        dropout=0.1,
+        horizon=horizon,
+    ),
+    "transformer_top1": lambda input_size, horizon: TransformerModel(
+        input_size=input_size,
+        d_model=128,
+        nhead=4,
+        num_layers=2,
+        dim_feedforward=128,
         dropout=0.1,
         horizon=horizon,
     ),

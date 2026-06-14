@@ -1457,3 +1457,228 @@
 **下一步任务**：
 1. 推送清理后的 `main` 到 GitHub
 2. 后续继续保持 `data/raw/`、`data/processed/`、`checkpoints/`、`runs/` 等目录不入库
+
+---
+
+## Transformer 超参搜索完成 ✅
+
+**完成时间**：2026-06-10
+
+**完成内容**：
+1. ✅ 使用 `configs/transformer_search.json` 在 CUDA（RTX 4060）上运行 128 组 grid search
+2. ✅ 搜索空间：d_model∈{64,128}, nhead∈{4,8}, layers∈{2,3}, ff∈{128,256}, dropout∈{0.05,0.1}, lr∈{1e-4,5e-5}, wd∈{0,1e-5}
+3. ✅ 训练参数：epochs=25, patience=5, batch_size=32, seed=216，数据集 ETTh1 h96
+4. ✅ 保存 Top-2 配置：`configs/transformer_top1.json`、`configs/transformer_top2.json`
+5. ✅ 在 `scripts/run_experiments.py` 注册 `transformer_top1` 和 `transformer_top2` 模型入口
+
+**修改的文件**：
+- `configs/transformer_search.json` - Transformer 搜索配置（epochs=25, patience=5）
+- `configs/transformer_top1.json` - Top-1 配置保存
+- `configs/transformer_top2.json` - Top-2 配置保存
+- `scripts/run_experiments.py` - 注册 transformer_top1/top2 模型 builder
+- `docs/progress.md` - 追加本次记录
+
+**生成的本地结果文件**：
+- `test_results/h96/ETTh1/transformer/` - 128 组完整搜索结果
+- `test_results/h96/ETTh1/transformer/transformer_search_summary.csv/md` - 搜索汇总表
+
+**搜索结果 Top-5（按 test MSE 排序）**：
+
+| 排名 | d_model | nhead | layers | ff | dropout | lr | wd | MSE | R² |
+|------|---------|-------|--------|-----|---------|------|------|------|------|
+| 🥇 | 128 | 8 | 2 | 256 | 0.05 | 5e-5 | 1e-5 | 0.9412 | 0.2625 |
+| 🥈 | 64 | 8 | 2 | 128 | 0.1 | 5e-5 | 0 | 0.9412 | 0.2624 |
+| 🥉 | 128 | 8 | 2 | 256 | 0.05 | 5e-5 | 0 | 0.9420 | 0.2618 |
+| 4 | 64 | 8 | 2 | 256 | 0.1 | 5e-5 | 0 | 0.9447 | 0.2598 |
+| 5 | 64 | 8 | 2 | 128 | 0.1 | 5e-5 | 1e-5 | 0.9451 | 0.2594 |
+
+**核心结论（test 指标）**：
+1. **nhead=8** 是最关键的超参，Top-10 全部是 h8 配置
+2. **lr=5e-5** 稳定优于 1e-4，是第二关键因素
+3. **2层 > 3层**：l3 在 d64 和 d128 上均明显过拟合
+4. d_model=64 与 128 差距极小（MSE 仅差 0.00002），小模型性价比更高
+5. dropout 在 0.05~0.1 范围内影响不大，与 lr 和 nhead 相比是次要因素
+
+**搜索结果 Top-5（按 val_loss 排序，补充）**：
+
+| 排名 | d_model | nhead | layers | ff | dropout | lr | wd | val_loss | val_R² |
+|------|---------|-------|--------|-----|---------|------|------|----------|--------|
+| 🥇 | 128 | 4 | 2 | 128 | 0.1 | 5e-5 | 0 | 0.8899 | 0.3207 |
+| 🥈 | 128 | 4 | 2 | 128 | 0.1 | 5e-5 | 1e-5 | 0.8912 | 0.3186 |
+| 🥉 | 128 | 4 | 2 | 128 | 0.1 | 1e-4 | 1e-5 | 0.9038 | 0.3082 |
+| 4 | 128 | 4 | 2 | 128 | 0.1 | 1e-4 | 0 | 0.9075 | 0.3070 |
+| 5 | 128 | 4 | 2 | 128 | 0.05 | 1e-4 | 1e-5 | 0.9111 | 0.3088 |
+
+**核心结论（val 指标，补充）**：
+1. **d128 + h4 + l2 + ff128 + dp0.1** 包揽验证集 Top-5，是 Transformer 最稳定的最优区间
+2. **lr=5e-5** 略优于 lr=1e-4（Top-2 均为 5e-5），但两者差距不大
+3. **nhead=4 优于 nhead=8**：验证集 Top-5 全部是 h4，而 h8 在 test 上看似更优实际是过拟合验证集
+4. **2层优于3层**：l3 全部排在 96 名之后，验证集上明确过拟合
+5. d_model=64 的所有配置均排在 43 名之后，128 是更优选择
+
+**下一步任务**：
+1. 用 `transformer_top1` 和 `transformer_top2` 配置在所有数据集和步长上跑正式实验
+2. 将优化后 Transformer 与正式实验中的 PatchTST、Autoformer 对比
+3. 考虑用相同搜索方法对其他模型做超参优化
+
+---
+
+## LSTM 超参搜索完成 ✅
+
+**完成时间**：2026-06-10
+
+**完成内容**：
+1. ✅ 新增 `scripts/tune_lstm.py`，支持 grid search + 中断续跑（skip_existing）
+2. ✅ 新增 `configs/lstm_search.json`，搜索空间 32 组
+3. ✅ 使用 CUDA（RTX 4060）在 ETTh1 h96 test set 上完成全部 32 组搜索
+4. ✅ 保存 Top-2 配置：`configs/lstm_top1.json`、`configs/lstm_top2.json`
+5. ✅ 在 `scripts/run_experiments.py` 注册 `lstm_top1` 和 `lstm_top2` 模型入口
+
+**修改的文件**：
+- `scripts/tune_lstm.py` - 新增 LSTM grid search 脚本（含 skip_existing 中断续跑）
+- `configs/lstm_search.json` - LSTM 搜索配置
+- `configs/lstm_top1.json` - Top-1 配置保存
+- `configs/lstm_top2.json` - Top-2 配置保存
+- `scripts/run_experiments.py` - 注册 lstm_top1/top2 模型 builder
+- `docs/progress.md` - 追加本次记录
+
+**搜索空间（32 组）**：
+
+| 参数 | 候选值 | 数量 |
+|------|--------|------|
+| hidden_size | 128, 256 | 2 |
+| num_layers | 1, 2 | 2 |
+| dropout | 0.1, 0.2 | 2 |
+| lr | 3e-4, 1e-3 | 2 |
+| weight_decay | 0, 1e-5 | 2 |
+
+**搜索结果 Top-5（按 test MSE 排序）**：
+
+| 排名 | hidden_size | layers | dropout | lr | wd | MSE | R² |
+|------|-------------|--------|---------|------|------|------|------|
+| 🥇 | 128 | 1 | 0.2 | 1e-3 | 0 | 0.9023 | 0.2930 |
+| 🥈 | 256 | 2 | 0.1 | 1e-3 | 1e-5 | 0.9784 | 0.2333 |
+| 🥉 | 256 | 1 | 0.2 | 1e-3 | 0 | 0.9863 | 0.2272 |
+| 4 | 128 | 2 | 0.1 | 3e-4 | 1e-5 | 0.9970 | 0.2187 |
+| 5 | 128 | 2 | 0.2 | 3e-4 | 0 | 0.9991 | 0.2171 |
+
+**核心结论（test 指标）**：
+1. **LSTM 最优 MSE=0.9023 < Transformer 最优 MSE=0.9412**，LSTM 在 ETTh1 h96 上反超 Transformer。核心原因：单层小模型 + 高学习率 + 强 dropout 的组合泛化更好，Transformer 的多头注意力在小数据集上反而容易过拟合。
+2. **lr=1e-3** 是 LSTM 最关键超参，Top-5 中 4 个使用高学习率
+3. **单层优于双层**：h128_l1（173k 参数）优于 h256_l2（1.04M 参数），轻量模型泛化更好
+4. **dropout=0.2** 在 l1 上优于 0.1，单层模型需要更强正则化
+5. weight_decay 影响最小，Top-1 无需 weight decay
+
+**搜索结果 Top-5（按 val_loss 排序，补充）**：
+
+| 排名 | hidden_size | layers | dropout | lr | wd | val_loss | val_R² |
+|------|-------------|--------|---------|------|------|----------|--------|
+| 🥇 | 256 | 1 | 0.2 | 1e-3 | 0 | 0.9077 | 0.3212 |
+| 🥈 | 256 | 1 | 0.1 | 1e-3 | 1e-5 | 0.9088 | 0.3210 |
+| 🥉 | 256 | 1 | 0.2 | 1e-3 | 1e-5 | 0.9191 | 0.2911 |
+| 4 | 256 | 2 | 0.1 | 1e-3 | 1e-5 | 0.9214 | 0.2953 |
+| 5 | 256 | 1 | 0.1 | 1e-3 | 0 | 0.9242 | 0.2938 |
+
+**核心结论（val 指标，补充）**：
+1. **h256 + l1 + lr0.001** 包揽验证集 Top-5，是 LSTM 最稳定的最优区间
+2. **lr=1e-3** 是 LSTM 最关键超参，Top-5 全部使用高学习率；lr=3e-4 的最优仅排第 12 名
+3. **单层优于双层**：l1 占据 Top-3，双层模型（l2）参数量翻倍但泛化更差
+4. **dropout=0.2 略优于 0.1**：单层模型需要更强正则化，Top-1 和 Top-3 均为 dp0.2
+5. weight_decay 影响最小，Top-1 无需 weight decay，与 Top-3（wd=1e-5）差距仅 0.01
+
+**与 Transformer 最优对比（ETTh1 h96）**：
+
+| 模型 | val_loss（验证集） | val_R²（验证集） | 最优配置 |
+|------|-------------------|-----------------|----------|
+| Transformer | **0.8899** | 0.3207 | d128, h4, l2, ff128, dp0.1, lr5e-5 |
+| LSTM | 0.9077 | **0.3212** | h256, l1, dp0.2, lr1e-3 |
+
+验证集上 Transformer val_loss 更低，LSTM val_R² 略高，两者基本持平。
+
+**下一步任务**：
+1. 用 `lstm_top1` 和 `transformer_top1` 配置在所有数据集和步长上跑正式实验
+2. 将优化后 LSTM/Transformer 与 PatchTST、Autoformer 正式结果全面对比
+3. 考虑增加更多搜索维度（如 hidden_size=64、lr=5e-4）进一步调优
+
+---
+
+## 实验设计审查：Top-k 按测试集筛选的问题 ⚠️
+
+**完成时间**：2026-06-10
+
+**完成内容**：
+1. ⚠️ 复核 Transformer 与 LSTM 超参搜索记录，发现当前 `transformer_top1/top2` 与 `lstm_top1/top2` 是按照测试集指标排序得到的 Top-k 配置
+2. ⚠️ 该做法不适合作为正式实验结论依据，因为测试集参与了超参数选择，会造成测试集信息泄露，使最终测试集 MSE/R² 偏乐观
+3. ✅ 明确正确流程应为：训练集用于训练，验证集用于选择 Top-k 超参数，测试集只用于最终一次性评估
+4. ✅ 当前测试集 Top-k 结果仅可作为探索性分析，不能直接写作“正式最优模型配置”或“最终泛化性能”
+
+**修改的文件**：
+- `docs/progress.md` - 追加本次实验设计审查记录
+
+**不合理点说明**：
+
+当前流程：
+
+```text
+train -> test MSE/R² 排名 -> 保存 top1/top2 -> 再报告 test 表现
+```
+
+该流程的问题是：测试集既参与了模型选择，又用于最终性能报告，导致测试集不再是独立评估集。尤其 Transformer 搜索 128 组、LSTM 搜索 32 组时，测试集排名可能包含对测试集偶然波动的适配。
+
+推荐流程：
+
+```text
+train loss -> 训练模型参数
+val MSE/R² -> 选择 top1/top2 超参数
+test MSE/R² -> 只对验证集选出的配置做最终报告
+```
+
+**对已有结论的影响**：
+1. “LSTM 最优 MSE=0.9023 < Transformer 最优 MSE=0.9412”目前只能表述为“基于测试集排序的探索性结果”
+2. 不能据此直接断言“正式调优后 LSTM 优于 Transformer”
+3. 若搜索结果中已保存验证集指标，则无需重新训练，可直接按验证集 MSE/R² 重新排序并生成新的 Top-k 配置
+4. 若验证集指标缺失，才需要重新运行搜索或重新评估验证集
+
+**测试结果**：
+- ✅ 已完成实验流程审查
+- ✅ 已在进度记录中标注测试集筛选 Top-k 的不合理性和修正方向
+- ⏳ 尚未重新按验证集指标生成 `lstm_val_top1/top2` 与 `transformer_val_top1/top2`
+
+**下一步任务**：
+1. 检查 `test_results/h96/ETTh1/{lstm,transformer}/` 中是否已保存验证集指标
+2. 按验证集 MSE/R² 重新排序，生成验证集选择版本的 Top-k 配置
+3. 用验证集选出的配置报告对应测试集表现，并更新论文/报告中的相关结论
+
+---
+
+## 同步提交整理：验证集 Top1 配置与搜索脚本修正
+
+**完成时间**：2026-06-14
+
+**完成内容**：
+1. 拉取并检查远端 `origin/main`，确认本地 `main` 与远端提交一致，无待合并提交
+2. 整理当前未提交内容，包括 LSTM/Transformer 超参搜索脚本、搜索配置、验证集 Top1 正式实验配置和 ETTh1 h96 搜索结果
+3. 修正搜索汇总排序逻辑：LSTM 与 Transformer 搜索汇总默认按 `best_val_loss` 排序，避免继续按测试集 MSE 选择 Top-k
+4. 为 Transformer 搜索脚本补齐 `skip_existing` / `--no-skip` 行为，与 LSTM 搜索脚本保持一致，避免重复运行覆盖已有搜索结果
+
+**修改的文件**：
+- `scripts/tune_lstm.py` - 搜索汇总改为按验证集 loss 排序
+- `scripts/tune_transformer.py` - 搜索汇总改为按验证集 loss 排序，并支持跳过已有结果
+- `scripts/run_experiments.py` - 注册 `lstm_top1` 与 `transformer_top1` 模型入口
+- `configs/lstm_search.json` - LSTM 网格搜索配置
+- `configs/transformer_search.json` - Transformer 网格搜索配置
+- `configs/lstm_top1.json` - 基于验证集 loss 选择的 LSTM Top1 正式实验配置
+- `configs/transformer_top1.json` - 基于验证集 loss 选择的 Transformer Top1 正式实验配置
+- `test_results/h96/ETTh1/` - ETTh1 h96 LSTM/Transformer 搜索结果与汇总文件
+- `docs/progress.md` - 追加本次同步整理记录
+
+**测试结果**：
+- ✅ `python -m py_compile scripts\tune_lstm.py scripts\tune_transformer.py scripts\run_experiments.py`
+- ✅ `python scripts\tune_lstm.py --config configs\lstm_search.json --dry-run --max-trials 1`
+- ✅ `python scripts\tune_transformer.py --config configs\transformer_search.json --dry-run --max-trials 1`
+- ⚠️ `scripts/run_experiments.py` 当前不支持 `--dry-run` 参数，因此未执行正式训练入口 dry-run；配置加载逻辑已通过代码检查确认
+
+**下一步任务**：
+1. 使用 `configs/lstm_top1.json` 与 `configs/transformer_top1.json` 在 ETTh1、ETTm1 的 5 个预测步长上运行正式实验
+2. 后续如需扩展到 ECL，应先根据 ECL 变量规模评估显存与训练时长
+3. 将验证集选出的 Top1 正式测试结果与 PatchTST、Autoformer 结果统一汇总对比

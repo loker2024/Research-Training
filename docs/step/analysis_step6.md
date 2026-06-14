@@ -19,7 +19,7 @@
 | ETTm1 h336 Autoformer 预测曲线 | `results/figures/prediction_ETTm1_h336_autoformer.png` | 长步长目标列预测效果 |
 | ETTm1 h336 Autoformer 残差 | `results/figures/residual_ETTm1_h336_autoformer.png` | 长步长残差分析 |
 
-推理样本 shape 已写入 `results/figures/prediction_samples_summary.csv`，图表清单写入 `results/figures/manifest.json`。
+推理样本 shape 已写入 `results/v1_csv/figures/prediction_samples_summary.csv`，图表清单写入 `results/figures/manifest.json`。
 
 ## 核心实验结论
 
@@ -44,6 +44,6 @@
 
 ## 后续报告建议
 
-1. 报告主表使用 `results/formal_seed42_all.csv` 和 `results/ablation_seed42_vs_formal_comparison.csv`。
+1. 报告主表使用 `results/v1_csv/formal/formal_seed42_all.csv` 和 `results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`。
 2. 正文图优先放 `formal_metric_trends.png`、`formal_best_model_by_horizon.png`、`ablation_delta_mse_pct.png` 和两组代表性预测/残差图。
 3. 结论部分突出两条主线：PatchTST 在 ETTh1 上稳定领先，Autoformer 在 ETTm1 上整体最优；消融结果证明通道独立性和序列分解是最关键的结构贡献。

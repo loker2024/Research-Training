@@ -1682,3 +1682,112 @@ test MSE/R² -> 只对验证集选出的配置做最终报告
 1. 使用 `configs/lstm_top1.json` 与 `configs/transformer_top1.json` 在 ETTh1、ETTm1 的 5 个预测步长上运行正式实验
 2. 后续如需扩展到 ECL，应先根据 ECL 变量规模评估显存与训练时长
 3. 将验证集选出的 Top1 正式测试结果与 PatchTST、Autoformer 结果统一汇总对比
+
+---
+
+## 仓库同步与文档路径校准 ✅
+
+**完成时间**：2026-06-14 11:19:59 +08:00
+
+**完成内容**：
+1. ✅ 保存本地 `docs/progress.md` 日期分组整理改动到 stash，避免同步远端时覆盖或丢失本地修改意图
+2. ✅ 使用 `git pull --ff-only` 将本地 `main` 快进到 `origin/main`，同步远端 6 个提交
+3. ✅ 校验正式实验结果：`formal_seed42` summary 共 50 个，覆盖 ETTh1/ETTm1、5 个 horizon、5 个模型
+4. ✅ 校验消融结果：`ablation_seed42` summary 共 16 个，对比表 `ablation_seed42_vs_formal_comparison.csv` 共 17 行（含表头）
+5. ✅ 校验图表目录：`results/figures/` 保留 12 张报告图和 `manifest.json`
+6. ✅ 修正 README、计划文档、分析文档、报告草稿、论文稿和结果索引中的当前路径引用
+7. ✅ 将报告图片相对路径从 `../results/figures/...` 修正为 `../../results/figures/...`，匹配 `docs/report/` 目录位置
+8. ✅ 修正 `results/RESULTS_INDEX.md` 中“临时结果已移除”的不准确描述，明确当前仍保留 `default` 和 `ablation_smoke` 辅助结果
+
+**修改的文件**：
+- `README.md` - 更新目录结构、分析/报告/论文入口和结果目录说明
+- `docs/step/analysis_step6.md` - 更新报告主表路径
+- `docs/plan/plan2026060902.md` - 更新消融汇总输出路径
+- `docs/plan/plan2026061001.md` - 更新第 6 步分析路径和输入表路径
+- `docs/plan/plan2026061002.md` - 更新第 7 步报告草稿路径和输入表路径
+- `docs/report/experiment_report_demo.md` - 修正图表相对路径和附录结果文件路径
+- `docs/report/experiment_paper.md` - 修正图表相对路径、参考文档路径和附录结果文件路径
+- `results/RESULTS_INDEX.md` - 更新正式结果、消融结果、图表和辅助结果说明
+- `docs/progress.md` - 追加本次同步与校准记录
+
+**测试结果**：
+- ✅ `git rev-list --left-right --count HEAD...origin/main` 输出 `0 0`，本地与远端 main 一致后再开始校准
+- ✅ `find results -path '*/formal_seed42/*_summary.json' | wc -l` 输出 `50`
+- ✅ `find results -path '*/ablation_seed42/*_summary.json' | wc -l` 输出 `16`
+- ✅ `wc -l results/v1_csv/formal/formal_seed42_all.csv results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv` 输出 `51` 和 `17`
+- ✅ `results/figures/manifest.json` 中列出的 12 个图表文件均在 `results/figures/` 下存在
+- ✅ README、报告、分析文档、计划文档和结果索引的 Markdown 图片/本地路径检查缺失数为 `0`
+- ✅ `python -m py_compile scripts/run_experiments.py scripts/summarize_results.py scripts/visualize_results.py models/ablation.py models/trainer.py` 通过
+
+**下一步任务**：
+1. 视需要提交本次文档校准变更
+2. 进入最终论文/报告格式整理，或继续补 `lstm_baseline` 全步长可复现实验
+
+---
+
+## 其他设备提交同步与合并 ✅
+
+**完成时间**：2026-06-14 11:41:30 +08:00
+
+**完成内容**：
+1. ✅ 执行 `git fetch origin`，发现远端 `main` 新增提交 `a86e92a feat(tuning): add validation-selected LSTM and Transformer configs`
+2. ✅ 暂存本地未提交的文档路径校准改动，避免拉取时覆盖本地工作
+3. ✅ 使用 `git pull --ff-only` 将远端提交快进合并到本地 `main`
+4. ✅ 重新应用本地文档路径校准改动，并处理 `docs/progress.md` 中的唯一冲突
+5. ✅ 冲突处理时同时保留远端新增的 LSTM/Transformer 调参记录和本地文档路径校准记录
+
+**修改的文件**：
+- `README.md`
+- `docs/plan/plan2026060901.md`
+- `docs/plan/plan2026060902.md`
+- `docs/plan/plan2026061001.md`
+- `docs/plan/plan2026061002.md`
+- `docs/progress.md`
+- `docs/report/experiment_paper.md`
+- `docs/report/experiment_report_demo.md`
+- `docs/step/analysis_step6.md`
+- `results/RESULTS_INDEX.md`
+
+**测试结果**：
+- ✅ `rg -n "<<<<<<<|=======|>>>>>>>" docs/progress.md README.md docs results/RESULTS_INDEX.md` 未发现冲突标记
+- ✅ README、报告、分析文档、计划文档和结果索引的 Markdown 图片/本地路径检查缺失数为 `0`
+- ✅ `python -m py_compile scripts/run_experiments.py scripts/summarize_results.py scripts/visualize_results.py scripts/tune_lstm.py scripts/tune_transformer.py models/ablation.py models/trainer.py` 通过
+- ✅ `git diff --check` 通过
+
+**下一步任务**：
+1. 视需要提交本次同步合并后的文档变更
+2. 使用 `configs/lstm_top1.json` 与 `configs/transformer_top1.json` 跑正式调优模型实验，或先整理最终报告格式
+
+---
+
+## 第 8 项：未提交文档变更检查与提交准备 ✅
+
+**完成时间**：2026-06-14 11:48:31 +08:00
+
+**完成内容**：
+1. ✅ 检查当前工作区未提交变更，确认范围集中在 README、计划文档、分析文档、报告草稿、论文稿、进度记录和结果索引
+2. ✅ 核对变更内容，确认主要是路径校准、结果目录说明、报告图片相对路径和辅助结果说明更新
+3. ✅ 确认未修改模型代码、训练脚本逻辑或正式实验结果数据
+4. ✅ 补充本条进度记录，准备将第 8 项相关文档校准变更统一提交
+
+**修改的文件**：
+- `README.md`
+- `docs/plan/plan2026060901.md`
+- `docs/plan/plan2026060902.md`
+- `docs/plan/plan2026061001.md`
+- `docs/plan/plan2026061002.md`
+- `docs/progress.md`
+- `docs/report/experiment_paper.md`
+- `docs/report/experiment_report_demo.md`
+- `docs/step/analysis_step6.md`
+- `results/RESULTS_INDEX.md`
+
+**测试结果**：
+- ✅ `git diff --check` 通过
+- ✅ `rg -n '^(<<<<<<<|=======|>>>>>>>)' README.md docs results/RESULTS_INDEX.md` 未发现真实冲突标记
+- ✅ `python -m py_compile scripts/run_experiments.py scripts/summarize_results.py scripts/visualize_results.py scripts/tune_lstm.py scripts/tune_transformer.py models/ablation.py models/trainer.py` 通过
+- ✅ 关键报告引用文件检查缺失数为 `0`
+
+**下一步任务**：
+1. 提交本次文档校准变更
+2. 继续处理剩余未完成项：ECL 正式/附录实验、单变量对比或 MAPE 汇总

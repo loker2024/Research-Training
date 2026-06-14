@@ -22,8 +22,8 @@ Research-Training/
 ├── docs/           # 项目文档、进度记录、报告资料
 ├── models/         # LSTM、Transformer、Informer、Autoformer、PatchTST 与训练框架
 ├── notebooks/      # 数据准备、基线训练、变体训练 notebook
-├── papers/         # 相关论文 PDF
-├── results/        # 保留的正式实验结果；临时/烟测结果可清理后再提交
+├── 参考资料/        # 论文 PDF、模板、报告参考资料
+├── results/        # 正式实验、消融实验、图表与汇总表
 └── checkpoints/    # 模型权重，本地保存，不上传 GitHub
 ```
 
@@ -82,7 +82,7 @@ python -m py_compile scripts/visualize_results.py
 python scripts/visualize_results.py
 
 # 图表输出：results/figures/
-# 分析文档：docs/analysis_step6.md
+# 分析文档：docs/step/analysis_step6.md
 # Notebook 版本：notebooks/visualize_results.ipynb
 
 # 中断后续跑：配置文件已默认开启 skip_existing，也可命令行显式开启
@@ -128,10 +128,12 @@ results/
 ├── h96/{dataset}/{model}/{run_tag}/
 ├── h168/{dataset}/{model}/{run_tag}/
 ├── h336/{dataset}/{model}/{run_tag}/
-├── summaries/
+├── v1_csv/
+├── v1_md/
+├── figures/
 └── RESULTS_INDEX.md
 ```
 
 ## 当前进度
 
-进度记录见 `docs/progress.md`，实施步骤见 `docs/项目步骤.md`。第 6 步分析见 `docs/analysis_step6.md`，实验报告草稿见 `docs/experiment_report_demo.md`，实验论文稿见 `docs/experiment_paper.md`。
+进度记录见 `docs/progress.md`，实施步骤见 `docs/step/项目步骤.md`。第 6 步分析见 `docs/step/analysis_step6.md`，实验报告草稿见 `docs/report/experiment_report_demo.md`，实验论文稿见 `docs/report/experiment_paper.md`。

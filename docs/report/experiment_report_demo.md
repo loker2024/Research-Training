@@ -70,7 +70,7 @@ PatchTST 将时间序列切分为 patch 后输入 Transformer，并采用通道�
 
 ### 4.1 指标趋势
 
-![核心指标趋势](../results/figures/formal_metric_trends.png)
+![核心指标趋势](../../results/figures/formal_metric_trends.png)
 
 整体趋势显示，PatchTST 与 Autoformer 是当前实验中最稳定的两类模型。随着预测步长增大，所有模型都出现不同程度的 MSE/MAE 上升与 R² 下降，说明长期预测任务存在明显误差累积。
 
@@ -89,7 +89,7 @@ PatchTST 将时间序列切分为 patch 后输入 Transformer，并采用通道�
 | ETTm1 | 168 | autoformer | 0.508573 | 0.480255 | 0.599255 |
 | ETTm1 | 336 | autoformer | 0.554604 | 0.507802 | 0.562683 |
 
-![各 horizon 最优模型](../results/figures/formal_best_model_by_horizon.png)
+![各 horizon 最优模型](../../results/figures/formal_best_model_by_horizon.png)
 
 ETTh1 上 PatchTST 在五个 horizon 中全部领先，说明 patch 化输入和通道独立建模对小时级 ETT 数据较为有效。ETTm1 上 Autoformer 全部领先，说明更高频率的 15 分钟数据中，趋势/季节分解能更好捕捉局部周期与长期变化。
 
@@ -103,7 +103,7 @@ ETTh1 上 PatchTST 在五个 horizon 中全部领先，说明 patch 化输入和
 | transformer | 0.917335 | 0.691747 | 0.279686 | 132768.000000 | 225.110838 |
 | lstm | 0.946142 | 0.702745 | 0.257014 | 117280.000000 | 128.939526 |
 
-![复杂度对比](../results/figures/formal_complexity_tradeoff.png)
+![复杂度对比](../../results/figures/formal_complexity_tradeoff.png)
 
 从平均结果看，PatchTST 的 MSE 最低，训练耗时也低于 Autoformer 与 Informer，表现出较好的性能与效率平衡。LSTM 训练耗时最短，但误差最高；Transformer 参数量最高，性能却弱于 Autoformer 与 PatchTST，说明标准 Transformer 结构并不能直接适配当前长时序预测任务。
 
@@ -113,25 +113,25 @@ ETTh1 上 PatchTST 在五个 horizon 中全部领先，说明 patch 化输入和
 
 ### 5.1 ETTh1 h96 PatchTST
 
-![ETTh1 h96 PatchTST 预测曲线](../results/figures/prediction_ETTh1_h96_patchtst.png)
+![ETTh1 h96 PatchTST 预测曲线](../../results/figures/prediction_ETTh1_h96_patchtst.png)
 
-![ETTh1 h96 PatchTST 残差](../results/figures/residual_ETTh1_h96_patchtst.png)
+![ETTh1 h96 PatchTST 残差](../../results/figures/residual_ETTh1_h96_patchtst.png)
 
 h96 预测中，PatchTST 能捕捉局部周期变化，但在部分急剧波动处仍存在平滑化倾向。残差图显示误差在局部区间会持续偏正或偏负，说明模型在短期突变位置仍会出现相位或幅值偏差。
 
 ### 5.2 ETTh1 h336 PatchTST
 
-![ETTh1 h336 PatchTST 预测曲线](../results/figures/prediction_ETTh1_h336_patchtst.png)
+![ETTh1 h336 PatchTST 预测曲线](../../results/figures/prediction_ETTh1_h336_patchtst.png)
 
-![ETTh1 h336 PatchTST 残差](../results/figures/residual_ETTh1_h336_patchtst.png)
+![ETTh1 h336 PatchTST 残差](../../results/figures/residual_ETTh1_h336_patchtst.png)
 
 h336 预测更能体现长期误差累积：模型更倾向于输出平滑趋势，对远期细节波动的刻画变弱。这与长步长下 MSE 上升、R² 下降的整体趋势一致。
 
 ### 5.3 ETTm1 h96 与 h336 Autoformer
 
-![ETTm1 h96 Autoformer 预测曲线](../results/figures/prediction_ETTm1_h96_autoformer.png)
+![ETTm1 h96 Autoformer 预测曲线](../../results/figures/prediction_ETTm1_h96_autoformer.png)
 
-![ETTm1 h336 Autoformer 残差](../results/figures/residual_ETTm1_h336_autoformer.png)
+![ETTm1 h336 Autoformer 残差](../../results/figures/residual_ETTm1_h336_autoformer.png)
 
 Autoformer 在 ETTm1 上整体最优，说明序列分解对高频数据的趋势和周期建模较有效。但在 h336 长步长下，残差仍会随预测窗口拉长而扩大，说明即使强模型也难以完全避免远期预测中的不确定性累积。
 
@@ -159,7 +159,7 @@ Autoformer 在 ETTm1 上整体最优，说明序列分解对高频数据的趋�
 | remove_patching | 8.543253 | 0.041929 | -0.032984 |
 | replace_autocorr_with_attention | -3.153671 | -0.022206 | 0.017405 |
 
-![消融影响](../results/figures/ablation_delta_mse_pct.png)
+![消融影响](../../results/figures/ablation_delta_mse_pct.png)
 
 结果显示，PatchTST 的通道独立性贡献最大，移除后平均 MSE 上升 162.25%。Autoformer 的序列分解模块同样关键，移除后平均 MSE 上升 81.48%。PatchTST 的 patching 机制整体有效，但影响幅度小于通道独立性。Auto-Correlation 的结果更复杂：在 ETTh1 上替换为标准注意力反而略优，在 ETTm1 上则原 Auto-Correlation 略优，说明当前轻量 Autoformer 配置仍有优化空间。
 
@@ -191,11 +191,11 @@ ETT 数据具有明显周期性和趋势性。Autoformer 通过序列分解显�
 
 ## 附：主要结果文件
 
-- `results/formal_seed42_all.csv`
-- `results/formal_seed42_all.md`
-- `results/ablation_seed42_summary.csv`
-- `results/ablation_seed42_summary.md`
-- `results/ablation_seed42_vs_formal_comparison.csv`
-- `results/ablation_seed42_vs_formal_comparison.md`
+- `results/v1_csv/formal/formal_seed42_all.csv`
+- `results/v1_md/formal/formal_seed42_all.md`
+- `results/v1_csv/ablation/ablation_seed42_summary.csv`
+- `results/v1_md/ablation/ablation_seed42_summary.md`
+- `results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`
+- `results/v1_md/ablation/ablation_seed42_vs_formal_comparison.md`
 - `results/figures/manifest.json`
-- `results/figures/prediction_samples_summary.csv`
+- `results/v1_csv/figures/prediction_samples_summary.csv`

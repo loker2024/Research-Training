@@ -107,7 +107,7 @@ PatchTST 借鉴视觉 Transformer 中 patch 的思想，将连续时间点切分
 | 消融 run tag | `ablation_seed42` |
 | 评价指标 | MSE、MAE、R2 |
 
-实验结果来自 `results/formal_seed42_all.csv` 和 `results/ablation_seed42_vs_formal_comparison.csv`。预测曲线和残差图由已有 checkpoint 对测试集首批样本推理得到，不重新训练模型。
+实验结果来自 `results/v1_csv/formal/formal_seed42_all.csv` 和 `results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`。预测曲线和残差图由已有 checkpoint 对测试集首批样本推理得到，不重新训练模型。
 
 ## 5 实验结果与分析
 
@@ -115,7 +115,7 @@ PatchTST 借鉴视觉 Transformer 中 patch 的思想，将连续时间点切分
 
 图 1 展示了五类模型在 ETTh1 和 ETTm1 上随预测步长变化的 MSE、MAE 和 R2 趋势。总体上，随着预测步长从 24 增加到 336，模型误差普遍升高，R2 整体下降，说明长期预测中的误差累积是稳定存在的现象。
 
-![核心指标趋势](../results/figures/formal_metric_trends.png)
+![核心指标趋势](../../results/figures/formal_metric_trends.png)
 
 **图 1：核心实验指标趋势。** 图中比较了 5 个模型在 2 个数据集和 5 个预测步长上的 MSE、MAE 与 R2。
 
@@ -138,7 +138,7 @@ ETTm1 上 Autoformer 在所有预测步长中均取得最低 MSE。其 h24、h48
 | ETTm1 | 168 | Autoformer | 0.508573 | 0.480255 | 0.599255 |
 | ETTm1 | 336 | Autoformer | 0.554604 | 0.507802 | 0.562683 |
 
-![各预测步长最优模型](../results/figures/formal_best_model_by_horizon.png)
+![各预测步长最优模型](../../results/figures/formal_best_model_by_horizon.png)
 
 **图 2：各数据集和预测步长的最优模型。** ETTh1 的最优模型均为 PatchTST，ETTm1 的最优模型均为 Autoformer。
 
@@ -154,7 +154,7 @@ ETTm1 上 Autoformer 在所有预测步长中均取得最低 MSE。其 h24、h48
 | Transformer | 0.917335 | 0.691747 | 0.279686 | 132768.0 | 225.111 |
 | LSTM | 0.946142 | 0.702745 | 0.257014 | 117280.0 | 128.940 |
 
-![复杂度对比](../results/figures/formal_complexity_tradeoff.png)
+![复杂度对比](../../results/figures/formal_complexity_tradeoff.png)
 
 **图 3：模型复杂度与性能权衡。** PatchTST 在平均误差和训练耗时之间取得较好平衡；LSTM 训练较快但误差较高。
 
@@ -162,21 +162,21 @@ ETTm1 上 Autoformer 在所有预测步长中均取得最低 MSE。其 h24、h48
 
 预测曲线进一步展示了模型在具体样本上的行为。ETTh1 h96 的 PatchTST 能够捕捉目标序列的主要波动趋势，但在局部突变处存在平滑化倾向。ETTh1 h336 中，这种现象更明显，模型倾向于输出较平滑的远期趋势，对远期细节变化的拟合能力减弱。
 
-![ETTh1 h96 PatchTST 预测曲线](../results/figures/prediction_ETTh1_h96_patchtst.png)
+![ETTh1 h96 PatchTST 预测曲线](../../results/figures/prediction_ETTh1_h96_patchtst.png)
 
 **图 4：ETTh1 h96 PatchTST 预测曲线。** 模型能够拟合主要趋势，但局部突变处仍存在偏差。
 
-![ETTh1 h336 PatchTST 残差](../results/figures/residual_ETTh1_h336_patchtst.png)
+![ETTh1 h336 PatchTST 残差](../../results/figures/residual_ETTh1_h336_patchtst.png)
 
 **图 5：ETTh1 h336 PatchTST 残差。** 长预测窗口下残差更容易出现持续偏正或偏负，体现出误差累积和相位偏移。
 
 ETTm1 上 Autoformer 表现最优。h96 预测曲线显示其能够较好跟随高频数据中的周期波动；但在 h336 上，残差仍会随预测窗口拉长而扩大。这说明序列分解能够提升高频数据上的整体性能，但不能完全消除远期预测中的不确定性。
 
-![ETTm1 h96 Autoformer 预测曲线](../results/figures/prediction_ETTm1_h96_autoformer.png)
+![ETTm1 h96 Autoformer 预测曲线](../../results/figures/prediction_ETTm1_h96_autoformer.png)
 
 **图 6：ETTm1 h96 Autoformer 预测曲线。** Autoformer 对高频数据的主要周期变化有较好拟合。
 
-![ETTm1 h336 Autoformer 残差](../results/figures/residual_ETTm1_h336_autoformer.png)
+![ETTm1 h336 Autoformer 残差](../../results/figures/residual_ETTm1_h336_autoformer.png)
 
 **图 7：ETTm1 h336 Autoformer 残差。** 即使在最优模型上，长步长预测仍存在远期误差扩大的问题。
 
@@ -191,7 +191,7 @@ ETTm1 上 Autoformer 表现最优。h96 预测曲线显示其能够较好跟随�
 | 移除 PatchTST patching | +0.041929 | +8.54% | -0.032984 |
 | 将 Auto-Correlation 替换为标准注意力 | -0.022206 | -3.15% | +0.017405 |
 
-![消融影响](../results/figures/ablation_delta_mse_pct.png)
+![消融影响](../../results/figures/ablation_delta_mse_pct.png)
 
 **图 8：消融实验的 MSE 变化率。** 通道独立建模和序列分解是最关键的性能来源。
 
@@ -232,7 +232,7 @@ ETTh1 与 ETTm1 的最优模型不同，说明长时序预测模型的适用性�
 [3] Zhou H, Zhang S, Peng J, et al. Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting. AAAI, 2021.  
 [4] Wu H, Xu J, Wang J, Long M. Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting. NeurIPS, 2021.  
 [5] Nie Y, Nguyen N H, Sinthong P, Kalagnanam J. A Time Series is Worth 64 Words: Long-term Forecasting with Transformers. ICLR, 2023.  
-[6] 项目文档与实验结果：`docs/model_introduction.md`、`docs/analysis_step6.md`、`results/formal_seed42_all.csv`、`results/ablation_seed42_vs_formal_comparison.csv`。
+[6] 项目文档与实验结果：`docs/knowledge/model_introduction.md`、`docs/step/analysis_step6.md`、`results/v1_csv/formal/formal_seed42_all.csv`、`results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`。
 
 ## 附录 A 术语与缩写
 
@@ -250,11 +250,11 @@ ETTh1 与 ETTm1 的最优模型不同，说明长时序预测模型的适用性�
 
 ## 附录 B 主要结果文件
 
-- `results/formal_seed42_all.csv`
-- `results/formal_seed42_all.md`
-- `results/ablation_seed42_summary.csv`
-- `results/ablation_seed42_summary.md`
-- `results/ablation_seed42_vs_formal_comparison.csv`
-- `results/ablation_seed42_vs_formal_comparison.md`
+- `results/v1_csv/formal/formal_seed42_all.csv`
+- `results/v1_md/formal/formal_seed42_all.md`
+- `results/v1_csv/ablation/ablation_seed42_summary.csv`
+- `results/v1_md/ablation/ablation_seed42_summary.md`
+- `results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`
+- `results/v1_md/ablation/ablation_seed42_vs_formal_comparison.md`
 - `results/figures/manifest.json`
-- `results/figures/prediction_samples_summary.csv`
+- `results/v1_csv/figures/prediction_samples_summary.csv`

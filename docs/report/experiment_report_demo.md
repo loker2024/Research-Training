@@ -2,7 +2,7 @@
 
 ## 摘要
 
-本项目围绕长时序预测任务，对比 LSTM、Transformer、Informer、Autoformer 与 PatchTST 五类模型在 ETTh1 与 ETTm1 数据集上的多步预测表现。实验统一采用回看窗口 96，预测步长设置为 24、48、96、168、336，并使用 MSE、MAE、R² 作为主要评价指标。核心实验共完成 `2 数据集 × 5 步长 × 5 模型 = 50` 组正式训练；消融实验围绕 Autoformer 与 PatchTST 的关键结构完成 16 组对比。结果表明，PatchTST 在 ETTh1 上五个预测步长均取得最低 MSE，Autoformer 在 ETTm1 上五个预测步长均取得最低 MSE；消融结果进一步说明 PatchTST 的通道独立建模与 Autoformer 的序列分解模块是性能提升的关键来源。
+本项目围绕长时序预测任务，对比 LSTM、Transformer、Informer、Autoformer 与 PatchTST 五类模型在 ETTh1 与 ETTm1 数据集上的多步预测表现。实验统一采用回看窗口 96，预测步长设置为 24、48、96、168、336，并使用 MSE、MAE、R² 作为主要评价指标，同时补充统计 MAPE 与目标列 MAPE。核心实验共完成 `2 数据集 × 5 步长 × 5 模型 = 50` 组正式训练；消融实验围绕 Autoformer 与 PatchTST 的关键结构完成 16 组对比。结果表明，PatchTST 在 ETTh1 上五个预测步长均取得最低 MSE，Autoformer 在 ETTm1 上五个预测步长均取得最低 MSE；消融结果进一步说明 PatchTST 的通道独立建模与 Autoformer 的序列分解模块是性能提升的关键来源。
 
 ## 1. 研究背景与任务
 
@@ -19,7 +19,7 @@
 
 ### 2.1 数据集
 
-本阶段主实验聚焦两个 ETT 数据集，ECL 暂不进入主结果矩阵，后续可作为高维附录实验。
+本阶段主实验聚焦两个 ETT 数据集，ECL 暂不进入主结果矩阵；当前已补充 ECL h96 高维快速验证，作为附录实验说明 321 变量场景下训练流程可跑通。
 
 | 数据集 | 变量数 | 频率 | 切分方式 | 说明 |
 | --- | ---: | --- | --- | --- |
@@ -42,7 +42,9 @@
 | batch size | 32 |
 | learning rate | 0.001 |
 | weight decay | 0.00001 |
-| 评价指标 | MSE、MAE、R²；结果文件中同时保留目标列指标 |
+| 评价指标 | MSE、MAE、R²；补充 MAPE、MAPE_target；结果文件中同时保留目标列指标 |
+
+MAPE 表示平均绝对百分比误差，便于用百分比理解预测误差。但本项目指标基于标准化后的序列计算，部分变量真实值会接近零，导致全变量 MAPE 被明显放大。因此报告仍以 MSE、MAE 和 R² 作为主指标，MAPE 只作为补充参考；其中 `MAPE_target` 比全变量 MAPE 更适合观察目标列误差。
 
 ## 3. 模型方法概述
 
@@ -106,6 +108,44 @@ ETTh1 上 PatchTST 在五个 horizon 中全部领先，说明 patch 化输入和
 ![复杂度对比](../../results/figures/formal_complexity_tradeoff.png)
 
 从平均结果看，PatchTST 的 MSE 最低，训练耗时也低于 Autoformer 与 Informer，表现出较好的性能与效率平衡。LSTM 训练耗时最短，但误差最高；Transformer 参数量最高，性能却弱于 Autoformer 与 PatchTST，说明标准 Transformer 结构并不能直接适配当前长时序预测任务。
+
+### 4.4 MAPE 补充结果
+
+从 50 组正式 summary JSON 中补充提取 MAPE 与 `MAPE_target` 后，跨数据集和预测步长平均的目标列 MAPE 排名如下：
+
+| model | avg_MAPE | avg_MAPE_target |
+| --- | ---: | ---: |
+| patchtst | 528.14 | 23.47 |
+| autoformer | 575.55 | 24.99 |
+| lstm | 811.56 | 45.47 |
+| informer | 690.98 | 50.51 |
+| transformer | 748.34 | 52.64 |
+
+补充结果显示，PatchTST 的平均 `MAPE_target` 最低，Autoformer 次之，与主指标下二者整体领先的结论一致。全变量 MAPE 绝对值偏大，说明接近零值会放大百分比误差，因此不作为本文主排序依据。相关文件见 `results/v1_csv/formal/formal_seed42_mape.csv` 与 `results/v1_csv/formal/formal_seed42_mape_by_model.csv`。
+
+### 4.5 单变量 vs 多变量对比
+
+为观察额外变量是否一定有助于目标列预测，本项目新增单变量/多变量对比脚本和 notebook。单变量实验只输入目标列并预测目标列；多变量实验保留全部变量输入和输出，然后比较目标列指标。代表性配置覆盖 ETTh1、ETTm1 的 h96/h336，以及 LSTM、Transformer、Autoformer、PatchTST 四个模型。当前结果使用 `sample_limit=512` 和最多 5 轮训练，适合快速复现实验流程。
+
+| 汇总项 | 结果 |
+| --- | --- |
+| 对比组合数 | 16 |
+| 单变量目标列 MSE 更低 | 15 |
+| 多变量目标列 MSE 更低 | 1 |
+| 唯一多变量占优组合 | ETTh1 h96 PatchTST |
+
+在这版快速实验中，单变量输入在多数目标列预测上更占优，说明额外变量可能带来优化难度或变量间噪声。PatchTST 在 ETTh1 h96 上从多变量输入受益，符合其通道独立建模可以缓解变量干扰的设计直觉。由于该对比是小样本快速实验，结论应作为补充观察；全量正式对比可将 `configs/univariate_multivariate_comparison.json` 中的 `sample_limit` 改为 `0` 后重跑。
+
+### 4.6 ECL 高维快速验证
+
+ECL 包含 321 个变量，变量规模明显高于 ETT 数据集。当前使用 `data/processed_smoke/ECL` 完成 h96 快速实验：预处理保留全部变量，每个 split 最多 256 个窗口；训练时 `sample_limit=64`、`batch_size=8`、`epochs=1`，覆盖 Informer 与 PatchTST。
+
+| model | MSE | MAE | R2 | MSE_target |
+| --- | ---: | ---: | ---: | ---: |
+| informer | 0.956632 | 0.809218 | -0.174003 | 0.987505 |
+| patchtst | 0.746415 | 0.720228 | 0.083981 | 0.981285 |
+
+结果显示 PatchTST 在高维快速验证中全变量 MSE 和 R² 优于 Informer，目标列 MSE 也略低。该结果仅说明高维流程已经跑通，并作为附录快速实验保留；ECL 正式全量实验仍需后续补充。
 
 ## 5. 预测曲线与残差分析
 
@@ -193,6 +233,16 @@ ETT 数据具有明显周期性和趋势性。Autoformer 通过序列分解显�
 
 - `results/v1_csv/formal/formal_seed42_all.csv`
 - `results/v1_md/formal/formal_seed42_all.md`
+- `results/v1_csv/formal/formal_seed42_mape.csv`
+- `results/v1_md/formal/formal_seed42_mape.md`
+- `results/v1_csv/formal/formal_seed42_mape_by_model.csv`
+- `results/v1_md/formal/formal_seed42_mape_by_model.md`
+- `results/v1_csv/feature_mode/feature_mode_seed42_comparison.csv`
+- `results/v1_md/feature_mode/feature_mode_seed42_comparison.md`
+- `results/v1_csv/feature_mode/feature_mode_seed42_comparison_delta.csv`
+- `results/v1_md/feature_mode/feature_mode_seed42_comparison_delta.md`
+- `results/v1_csv/ecl/ecl_smoke_optv2_summary.csv`
+- `results/v1_md/ecl/ecl_smoke_optv2_summary.md`
 - `results/v1_csv/ablation/ablation_seed42_summary.csv`
 - `results/v1_md/ablation/ablation_seed42_summary.md`
 - `results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`

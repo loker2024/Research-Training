@@ -24,6 +24,7 @@ data.zip
 outputs/
 checkpoints/
 runs/
+test_results/
 
 *.pt
 *.pth
@@ -39,3 +40,5 @@ combined_visualization.png
 
 
 /data/raw/
+
+

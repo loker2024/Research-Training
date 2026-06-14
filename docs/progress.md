@@ -1,10 +1,6 @@
-# 项目进度追踪
+> 项目概述：基于 LSTM、Transformer、Informer、Autoformer、PatchTST 的长时序预测研究项目。
 
-## 项目概述
-
-基于 LSTM、Transformer、Informer、Autoformer、PatchTST 的长时序预测研究项目。
-
----
+# 2026-06-07
 
 ## 步骤 1：数据准备与预处理 ✅
 
@@ -43,7 +39,6 @@
 2. 实现 Transformer 基线模型 ✅
 3. 统一训练框架 ✅
 
----
 
 ## 步骤 2：基础模型实现 ✅
 
@@ -99,7 +94,6 @@
 3. **架构局限**：两个模型均只用最后时间步输出，信息压缩严重，预测能力受限
 4. **Baseline 效果一般**：作为后续高效模型（Informer/Autoformer/PatchTST）的对比基准
 
----
 
 ## 步骤 3：高效变体模型实现 🔄
 
@@ -138,7 +132,6 @@
 3. 测试不同预测步长（48, 96, 168, 336）
 4. 与基线模型对比
 
----
 
 ## 资料整理：Transformer 高效变体原始论文 ✅
 
@@ -164,7 +157,6 @@
 1. 阅读三篇论文并提取模型结构、核心公式和实验设置
 2. 对照当前实现检查关键模块是否与论文描述一致
 
----
 
 ## 项目状态阅读与交接 ✅
 
@@ -189,7 +181,6 @@
 2. 检查并修复 Transformer encoder 层复用同一实例的问题
 3. 继续运行 ETTh1、ETTm1、ECL 的核心实验，并补齐结果记录
 
----
 
 ## Git 忽略规则与同步准备 ✅
 
@@ -218,7 +209,6 @@
 1. 提交当前整理后的项目文件
 2. 推送到 GitHub 远程仓库
 
----
 
 ## Autoformer 轻量化与训练 notebook 重写 ✅
 
@@ -248,7 +238,6 @@
 2. 关闭快速验证后运行正式核心实验，并记录每个模型的训练耗时与指标
 3. 若要跑 ECL 完整实验，优先处理当前压缩 `.npz` 文件过大的加载问题
 
----
 
 ## train_variants notebook 中文乱码修复 ✅
 
@@ -270,7 +259,6 @@
 1. 在 Jupyter 中重新打开 `train_variants.ipynb` 检查显示效果
 2. 继续执行 Autoformer 快速验证训练
 
----
 
 ## train_variants 结果保存逻辑修正 ✅
 
@@ -293,7 +281,6 @@
 1. 重新运行保存结果单元，确认生成以模型名命名的结果文件
 2. 继续执行 Autoformer 快速验证训练
 
----
 
 ## train_variants 实验配置与结果字段补充 ✅
 
@@ -318,7 +305,6 @@
 1. 重新运行训练单元和保存单元，检查生成的模型结果文件字段
 2. 继续执行 Autoformer 快速验证训练
 
----
 
 ## train_variants 批量实验循环改造 ✅
 
@@ -347,7 +333,6 @@
 1. 用默认 `DATASETS_TO_RUN=[DATASETS[0]]`、`HORIZONS_TO_RUN=[HORIZON_LIST[0]]` 先跑通单组合
 2. 再逐步扩展为多个 horizon 或多个 dataset，避免一次性触发过大的 ECL 完整训练
 
----
 
 ## 待办事项
 
@@ -356,7 +341,8 @@
 - [ ] 步骤 6：可视化与深入分析
 - [ ] 步骤 7：撰写实验报告
 
----
+
+# 2026-06-08
 
 ## 命令行实验入口与 ETTh1 快速验证 ✅
 
@@ -391,7 +377,6 @@
 2. 再扩展到 ETTm1；ECL 完整实验需注意预处理文件体积和训练耗时
 3. 汇总结果表，进入步骤 5 消融实验设计
 
----
 
 ## ETTh1 快速核心实验矩阵 ✅
 
@@ -437,7 +422,6 @@
 2. 选择合适 epoch 和 sample 设置，开始 ETTh1 正式核心实验
 3. 为正式结果增加随机种子控制和重复实验统计
 
----
 
 ## ETTm1 快速核心实验矩阵 ✅
 
@@ -485,7 +469,6 @@
 2. 为正式核心实验加入固定随机种子、可复现实验配置文件和结果汇总标记
 3. 开始 ETTh1/ETTm1 的正式多 epoch 核心实验
 
----
 
 ## Informer/PatchTST 变体优化与重训 ✅
 
@@ -552,7 +535,6 @@
 2. 对 ETTh1/ETTm1 先跑正式多 epoch 实验，避免 ECL 全量预处理过早占用大量磁盘
 3. 根据正式结果进入步骤 5 消融实验
 
----
 
 ## 正式实验配置化入口 ✅
 
@@ -587,7 +569,6 @@
 2. 正式结果完成后，生成正式汇总表并与快速实验结果分开标记
 3. 根据正式核心实验结果进入步骤 5 消融实验
 
----
 
 ## 24/48 预测步长补齐与五步长汇总 ✅
 
@@ -647,7 +628,6 @@
 2. 运行五步长正式多 epoch 实验，并使用 `run_tag=formal_seed42` 与 quick5 结果区分
 3. 正式结果完成后再进入步骤 5 消融实验
 
----
 
 ## results 分类目录整理 ✅
 
@@ -692,7 +672,6 @@
 2. 在正式汇总表中区分 `quick5`、`optv2`、`formal_seed42` 等 run tag
 3. 继续执行五步长正式多 epoch 训练
 
----
 
 ## 训练续跑与跳过已有结果 ✅
 
@@ -728,7 +707,6 @@
 2. 训练期间如中断，可直接重跑同一命令续跑
 3. 正式结果完成后生成 `formal_seed42` 汇总表并进入消融实验
 
----
 
 ## ETTh1 h24 PatchTST 正式实验首块 ✅
 
@@ -770,7 +748,6 @@
 2. 再扩展到 ETTh1 的 h48/h96/h168/h336
 3. ETTh1 完成后继续 ETTm1 的五步长正式实验
 
----
 
 ## ETTh1 h24 LSTM 正式实验与生成时分类 ✅
 
@@ -813,7 +790,6 @@
 2. 每个正式结果都会直接落到 `results/h24/...`
 3. ETTh1 h24 五模型完成后生成完整 h24 formal 汇总
 
----
 
 ## ETTh1 h24 五模型正式实验完成 ✅
 
@@ -861,7 +837,8 @@
 2. 生成 `formal_seed42_etth1_h48_summary.csv/md`
 3. 按顺序推进 ETTh1 h96/h168/h336
 
----
+
+# 2026-06-09
 
 ## results 目录临时结果清理 ✅
 
@@ -897,7 +874,6 @@
 1. 继续 ETTh1 h96/h168/h336 正式实验
 2. 后续结果统一保存到 `results/h{horizon}/ETTh1/{model}/formal_seed42/`
 
----
 
 ## results Git 追踪同步 ✅
 
@@ -924,7 +900,6 @@
 **下一步任务**：
 1. 提交并推送当前 results 追踪同步变更
 
----
 
 ## ETTh1 h96/h168/h336 正式实验完成 ✅
 
@@ -977,7 +952,6 @@
 2. 开始 ETTm1 五步长正式实验
 3. ETTh1/ETTm1 完成后生成跨数据集总表
 
----
 
 ## ETTm1 五步长正式实验完成 ✅
 
@@ -1024,7 +998,6 @@
 2. 按计划 ECL 暂不进入主正式矩阵，等 ETTh1/ETTm1 完成后做高维可行性 smoke 或附录实验
 3. 进入步骤 5 消融实验设计
 
----
 
 ## 步骤 5：消融实验 🔄
 
@@ -1082,7 +1055,6 @@
 3. 生成消融与正式实验对比表（MSE、MAE、R²、参数量、训练耗时）
 4. 更新 README.md 补充消融实验运行命令
 
----
 
 ## 消融实验运行脚本检查 ✅
 
@@ -1108,7 +1080,8 @@
 2. 消融完成后生成 `results/ablation_seed42_summary.csv/md`
 3. 生成消融与 `formal_seed42` 原模型对比表
 
----
+
+# 2026-06-10
 
 ## 步骤 5：消融实验完成 ✅
 
@@ -1170,7 +1143,6 @@
 2. 基于 `formal_seed42_all_summary` 和 `ablation_seed42_vs_formal_comparison` 绘制模型性能、步长趋势与消融影响图
 3. 为实验报告整理核心结论和表格
 
----
 
 ## 步骤 6：可视化与深入分析 ✅
 
@@ -1216,7 +1188,6 @@
 2. 将 `docs/analysis_step6.md` 中的图表和结论整合进最终报告
 3. 根据报告结构补充实验设置、模型介绍、结果讨论、消融分析和结论展望
 
----
 
 ## 步骤 6 补充：可视化 Notebook ✅
 
@@ -1242,7 +1213,6 @@
 1. 进入步骤 7：撰写实验报告
 2. 报告撰写时可优先使用 `notebooks/visualize_results.ipynb` 交互式检查图表，再引用 `results/figures/` 中的静态图片
 
----
 
 ## 步骤 7：实验报告草稿 ✅
 
@@ -1278,7 +1248,6 @@
 2. 如需提交 Word/PDF，可将 Markdown 报告转换为 DOCX/PDF
 3. 视时间补充 ECL 高维 smoke/附录实验，或补充多随机种子稳定性实验
 
----
 
 ## 实验论文稿撰写 ✅
 
@@ -1306,7 +1275,6 @@
 2. 可继续补充作者、单位、基金/致谢和目标期刊/课程格式要求
 3. 若时间允许，补充 ECL 高维实验或多随机种子结果以增强论文稳健性
 
----
 
 ## LSTM Baseline 配置选定 ✅
 
@@ -1359,7 +1327,6 @@
 1. 使用 `lstm_baseline` 配置在所有数据集和步长上跑完整 baseline
 2. 将 baseline 结果与其他模型正式结果对比
 
----
 
 ## 相关论文理解：Informer / Autoformer / PatchTST ✅
 
@@ -1396,7 +1363,6 @@
 1. 对照理解文档检查项目模型实现的细节是否与论文一致
 2. 如发现偏差，可参照理解文档中的复现指南修正
 
----
 
 ## 基线训练 Notebook 重构与随机种子控制 ✅
 
@@ -1431,7 +1397,6 @@
 1. 使用固定种子重新跑基线实验，获得可复现的正式结果
 2. 将 notebook 训练结果与脚本 `run_experiments.py` 结果交叉验证
 
----
 
 ## Git 同步前大文件清理 ✅
 
@@ -1458,7 +1423,6 @@
 1. 推送清理后的 `main` 到 GitHub
 2. 后续继续保持 `data/raw/`、`data/processed/`、`checkpoints/`、`runs/` 等目录不入库
 
----
 
 ## Transformer 超参搜索完成 ✅
 
@@ -1521,7 +1485,6 @@
 2. 将优化后 Transformer 与正式实验中的 PatchTST、Autoformer 对比
 3. 考虑用相同搜索方法对其他模型做超参优化
 
----
 
 ## LSTM 超参搜索完成 ✅
 
@@ -1600,7 +1563,6 @@
 2. 将优化后 LSTM/Transformer 与 PatchTST、Autoformer 正式结果全面对比
 3. 考虑增加更多搜索维度（如 hidden_size=64、lr=5e-4）进一步调优
 
----
 
 ## 实验设计审查：Top-k 按测试集筛选的问题 ⚠️
 
@@ -1649,7 +1611,8 @@ test MSE/R² -> 只对验证集选出的配置做最终报告
 2. 按验证集 MSE/R² 重新排序，生成验证集选择版本的 Top-k 配置
 3. 用验证集选出的配置报告对应测试集表现，并更新论文/报告中的相关结论
 
----
+
+# 2026-06-14
 
 ## 同步提交整理：验证集 Top1 配置与搜索脚本修正
 
@@ -1683,7 +1646,6 @@ test MSE/R² -> 只对验证集选出的配置做最终报告
 2. 后续如需扩展到 ECL，应先根据 ECL 变量规模评估显存与训练时长
 3. 将验证集选出的 Top1 正式测试结果与 PatchTST、Autoformer 结果统一汇总对比
 
----
 
 ## 仓库同步与文档路径校准 ✅
 
@@ -1723,7 +1685,6 @@ test MSE/R² -> 只对验证集选出的配置做最终报告
 1. 视需要提交本次文档校准变更
 2. 进入最终论文/报告格式整理，或继续补 `lstm_baseline` 全步长可复现实验
 
----
 
 ## 其他设备提交同步与合并 ✅
 
@@ -1758,7 +1719,6 @@ test MSE/R² -> 只对验证集选出的配置做最终报告
 1. 视需要提交本次同步合并后的文档变更
 2. 使用 `configs/lstm_top1.json` 与 `configs/transformer_top1.json` 跑正式调优模型实验，或先整理最终报告格式
 
----
 
 ## 第 8 项：未提交文档变更检查与提交准备 ✅
 
@@ -1791,3 +1751,338 @@ test MSE/R² -> 只对验证集选出的配置做最终报告
 **下一步任务**：
 1. 提交本次文档校准变更
 2. 继续处理剩余未完成项：ECL 正式/附录实验、单变量对比或 MAPE 汇总
+
+
+## 剩余工作待办计划更新 ✅
+
+**完成时间**：2026-06-14 11:52:19 +08:00
+
+**完成内容**：
+1. ✅ 根据当前选题缺口和已完成工作，整理剩余任务优先级
+2. ✅ 新增 Markdown checklist 格式待办清单，覆盖必须补齐项、增强项和最终交付整理
+3. ✅ 将第 8 项标记为已完成，并把 ECL、单变量对比、MAPE 汇总列为优先任务
+
+**修改的文件**：
+- `docs/plan/todo20260614_remaining.md` - 新增剩余工作待办清单
+- `docs/progress.md` - 追加本次计划更新记录
+
+**测试结果**：
+- ✅ 待办清单使用 Markdown checkbox 格式
+- ✅ 未修改实验代码或结果数据
+
+**下一步任务**：
+1. 按待办清单优先处理 ECL 正式/附录实验
+2. 或先补 MAPE 汇总，作为较小粒度的报告完善任务
+
+
+## progress.md 日期分组重构 ✅
+
+**完成时间**：2026-06-14 11:58:00 +08:00
+
+**完成内容**：
+1. ✅ 将 `docs/progress.md` 从“项目标题 + 事项二级标题”重构为“日期一级标题 + 完成事项二级标题”
+2. ✅ 按 `完成时间` 或 `开始时间` 将历史记录归档到 2026-06-07、2026-06-08、2026-06-09、2026-06-10、2026-06-14
+3. ✅ 保留原有记录正文、测试结果、修改文件和下一步任务内容
+4. ✅ 将项目概述改为文档开头说明，避免破坏日期作为一级标题的结构
+
+**修改的文件**：
+- `docs/progress.md` - 按日期重排标题层级
+
+**测试结果**：
+- ✅ 一级标题均为日期
+- ✅ 完成事项均为二级标题
+- ✅ 原有完成/开始时间记录已按日期归档
+
+**下一步任务**：
+1. 继续按 `docs/plan/todo20260614_remaining.md` 推进剩余任务
+
+
+## MAPE 指标汇总与报告补充 ✅
+
+**完成时间**：2026-06-14 12:26:16 +08:00
+
+**完成内容**：
+1. ✅ 新增 MAPE 汇总脚本，从 50 组 `formal_seed42` summary JSON 中提取 `MAPE` 与 `MAPE_target`
+2. ✅ 生成正式实验 MAPE 明细表与按数据集/模型聚合表
+3. ✅ 在论文版报告和课程报告版中补充 MAPE 公式、接近零值敏感性说明和目标列 MAPE 分析
+4. ✅ 更新结果目录索引、待办清单和结果总索引
+
+**修改的文件**：
+- `scripts/summarize_mape.py`
+- `results/v1_csv/formal/formal_seed42_mape.csv`
+- `results/v1_md/formal/formal_seed42_mape.md`
+- `results/v1_csv/formal/formal_seed42_mape_by_model.csv`
+- `results/v1_md/formal/formal_seed42_mape_by_model.md`
+- `results/v1_csv/catalog.md`
+- `results/v1_md/catalog.md`
+- `results/RESULTS_INDEX.md`
+- `docs/report/experiment_paper.md`
+- `docs/report/experiment_report_demo.md`
+- `docs/plan/todo20260614_remaining.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ `python scripts/summarize_mape.py` 成功生成 50 行明细与 15 行聚合结果
+- ✅ `python -m py_compile scripts/summarize_mape.py` 通过
+- ✅ MAPE 补充表仅读取 `formal_seed42` 正式结果，未混入 smoke/default 结果
+- ✅ `git diff --check` 通过
+- ✅ `rg -n '^(<<<<<<<|=======|>>>>>>>)' docs results scripts` 未发现真实冲突标记
+
+**下一步任务**：
+1. 补齐 ECL 高维数据正式或附录实验
+2. 补齐单变量 vs 多变量对比实验
+
+
+## 单变量 vs 多变量对比实验 ✅
+
+**完成时间**：2026-06-14 12:40:47 +08:00
+
+**完成内容**：
+1. ✅ 新增专用训练脚本，支持 `univariate` 与 `multivariate` 两种变量输入口径
+2. ✅ 明确单变量定义：只输入目标列并只预测目标列；多变量保留全部变量输入和输出
+3. ✅ 新增流程 notebook，展示数据形状、目标列切片、脚本运行、对比表读取和透视表分析
+4. ✅ 新增配置文件，覆盖 ETTh1/ETTm1 × h96/h336 × LSTM/Transformer/Autoformer/PatchTST × 单变量/多变量
+5. ✅ 完成 32 组代表性快速对比实验，并生成明细表和 delta 表
+6. ✅ 将单变量/多变量对比补充到结果索引、论文版报告和课程报告版
+
+**修改的文件**：
+- `scripts/run_univariate_multivariate.py`
+- `configs/univariate_multivariate_comparison.json`
+- `notebooks/univariate_multivariate_comparison.ipynb`
+- `results/univariate_multivariate/`
+- `results/v1_csv/feature_mode/feature_mode_seed42_comparison.csv`
+- `results/v1_md/feature_mode/feature_mode_seed42_comparison.md`
+- `results/v1_csv/feature_mode/feature_mode_seed42_comparison_delta.csv`
+- `results/v1_md/feature_mode/feature_mode_seed42_comparison_delta.md`
+- `results/v1_csv/feature_mode/feature_mode_smoke_comparison.csv`
+- `results/v1_md/feature_mode/feature_mode_smoke_comparison.md`
+- `results/v1_csv/feature_mode/feature_mode_smoke_comparison_delta.csv`
+- `results/v1_md/feature_mode/feature_mode_smoke_comparison_delta.md`
+- `results/v1_csv/catalog.md`
+- `results/v1_md/catalog.md`
+- `results/RESULTS_INDEX.md`
+- `docs/report/experiment_paper.md`
+- `docs/report/experiment_report_demo.md`
+- `docs/plan/todo20260614_remaining.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ `python -m py_compile scripts/run_univariate_multivariate.py` 通过
+- ✅ `notebooks/univariate_multivariate_comparison.ipynb` JSON 解析通过
+- ✅ 最小 smoke 实验完成：ETTh1 h96 LSTM 单变量/多变量各 1 轮，生成 2 行明细与 1 行 delta
+- ✅ 代表性快速实验完成：生成 32 行明细与 16 行 delta
+- ✅ 16 个组合中 15 个组合单变量目标列 MSE 更低；唯一多变量占优组合为 ETTh1 h96 PatchTST
+- ✅ `git diff --check` 通过
+- ✅ `rg -n '^(<<<<<<<|=======|>>>>>>>)' docs results scripts notebooks configs` 未发现真实冲突标记
+- ⚠️ 当前 shell Python 缺少 `pandas`，notebook 已加入依赖提示；项目 `requirements.txt` 已包含 pandas
+
+**下一步任务**：
+1. 如需正式结论，将 `configs/univariate_multivariate_comparison.json` 中 `sample_limit` 改为 `0` 后重跑全量对比
+2. 补齐 ECL 高维数据正式或附录实验
+
+
+## ECL 高维快速实验 ✅
+
+**完成时间**：2026-06-14 12:56:17 +08:00
+
+**完成内容**：
+1. ✅ 确认 `data/processed_smoke/ECL/h96` 已保留完整 321 变量，并限制每个 split 最多 256 个窗口
+2. ✅ 使用 `configs/ecl_smoke_optv2.json` 运行 ECL h96 高维快速实验
+3. ✅ 覆盖 `informer,patchtst` 两个轻量模型组合，训练参数为 `sample_limit=64`、`batch_size=8`、`epochs=1`
+4. ✅ 生成 ECL 快速实验 CSV/Markdown 汇总表
+5. ✅ 将 ECL 快速实验明确写入报告为“附录快速验证”，并标注不等同于正式全量实验
+6. ✅ 更新 `README.md`、结果索引和待办清单
+
+**修改的文件**：
+- `results/h96/ECL/informer/ecl_smoke_optv2/`
+- `results/h96/ECL/patchtst/ecl_smoke_optv2/`
+- `results/v1_csv/ecl/ecl_smoke_optv2_summary.csv`
+- `results/v1_md/ecl/ecl_smoke_optv2_summary.md`
+- `results/v1_csv/catalog.md`
+- `results/v1_md/catalog.md`
+- `results/RESULTS_INDEX.md`
+- `README.md`
+- `docs/report/experiment_paper.md`
+- `docs/report/experiment_report_demo.md`
+- `docs/plan/todo20260614_remaining.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ ECL h96 数据形状确认：`X=(256, 96, 321)`，`Y=(256, 96, 321)`
+- ✅ `python scripts/run_experiments.py --config configs/ecl_smoke_optv2.json` 成功完成
+- ✅ Informer 快速结果：MSE=0.956632，MAE=0.809218，R2=-0.174003，MSE_target=0.987505
+- ✅ PatchTST 快速结果：MSE=0.746415，MAE=0.720228，R2=0.083981，MSE_target=0.981285
+- ✅ 快速配置下 PatchTST 全变量 MSE/R2 优于 Informer，目标列 MSE 略低
+- ✅ `python -m py_compile scripts/run_experiments.py scripts/preprocess_data.py` 通过
+- ✅ `git diff --check` 通过
+- ✅ `rg -n '^(<<<<<<<|=======|>>>>>>>)' README.md docs results scripts configs notebooks` 未发现真实冲突标记
+
+**下一步任务**：
+1. 如需 ECL 正式结论，生成或使用全量 ECL h96 预处理数据并扩大训练样本与 epoch
+2. 根据资源情况扩展 ECL h336 或五个预测步长
+
+
+## 三种变体超参调优工具准备 ✅
+
+**完成时间**：2026-06-14
+
+**完成内容**：
+1. ✅ 创建 `scripts/tune_informer.py`，基于 `tune_transformer.py` 模板，支持 Informer 网格搜索
+2. ✅ 创建 `scripts/tune_autoformer.py`，基于 `tune_transformer.py` 模板，支持 Autoformer 网格搜索（含 kernel_size 维度）
+3. ✅ 创建 `scripts/tune_patchtst.py`，基于 `tune_transformer.py` 模板，支持 PatchTST 网格搜索（含 patch_len/stride 维度）
+4. ✅ 创建 `configs/informer_search.json`，Informer 搜索空间 2^7=128 组合
+5. ✅ 创建 `configs/autoformer_search.json`，Autoformer 搜索空间 2^7=128 组合
+6. ✅ 创建 `configs/patchtst_search.json`，PatchTST 搜索空间 2^7=128 组合
+7. ✅ 创建 `notebooks/tune_informer.ipynb`、`tune_autoformer.ipynb`、`tune_patchtst.ipynb`，用于交互式查看搜索空间和分析结果
+8. ✅ 三个脚本 `--dry-run` 测试全部通过
+9. ✅ 清理 `results/` 中测试实验结果（ECL smoke、feature mode、univariate_multivariate、ablation_smoke、default 目录）
+
+**修改的文件**：
+- `scripts/tune_informer.py` - 新增 Informer 超参搜索脚本
+- `scripts/tune_autoformer.py` - 新增 Autoformer 超参搜索脚本
+- `scripts/tune_patchtst.py` - 新增 PatchTST 超参搜索脚本
+- `configs/informer_search.json` - Informer 搜索配置
+- `configs/autoformer_search.json` - Autoformer 搜索配置
+- `configs/patchtst_search.json` - PatchTST 搜索配置
+- `notebooks/tune_informer.ipynb` - Informer 搜索交互式 notebook
+- `notebooks/tune_autoformer.ipynb` - Autoformer 搜索交互式 notebook
+- `notebooks/tune_patchtst.ipynb` - PatchTST 搜索交互式 notebook
+- `docs/progress.md` - 追加本次记录
+
+**搜索空间设计**：
+
+| 模型 | 搜索维度 | 组合数 | 模型特有维度 | 固定参数 |
+|------|---------|--------|------------|---------|
+| Informer | d_model, n_heads, n_enc, n_dec, d_ff, factor, dropout | 2^7=128 | factor ∈ {3,5} | lr=1e-3, wd=1e-5 |
+| Autoformer | d_model, n_heads, n_enc, n_dec, d_ff, factor, kernel_size | 2^7=128 | factor ∈ {3,5}, ks ∈ {13,25} | lr=1e-3, wd=1e-5, dropout=0.1 |
+| PatchTST | d_model, n_heads, n_layers, d_ff, patch_len, stride, dropout | 2^7=128 | patch_len ∈ {16,32}, stride ∈ {4,8} | lr=1e-3, wd=1e-5 |
+
+**参数量范围（dry-run 验证）**：
+
+| 模型 | 最小参数量 | 最大参数量 |
+|------|-----------|-----------|
+| Informer | 106,407 | 640,103 |
+| Autoformer | 103,239 | 550,343 |
+| PatchTST | 99,776 | 465,728 |
+
+**清理操作**：
+- 删除 `results/univariate_multivariate/`（feature mode 比较实验，sample_limit=512）
+- 删除 `results/h96/ECL/`（ECL smoke 测试，sample_limit=64）
+- 删除 `results/v1_md/feature_mode/`、`results/v1_md/ecl/`（对应汇总表）
+- 删除 `results/v1_csv/feature_mode/`、`results/v1_csv/ecl/`（对应汇总表）
+- 删除 h96/h336 下的 `default/` 和 `ablation_smoke/` 早期调试目录
+
+**测试结果**：
+- ✅ `python scripts/tune_informer.py --dry-run` 输出 128 组合，参数量 106,407 ~ 640,103
+- ✅ `python scripts/tune_autoformer.py --dry-run` 输出 128 组合，参数量 103,239 ~ 550,343
+- ✅ `python scripts/tune_patchtst.py --dry-run` 输出 128 组合，参数量 99,776 ~ 465,728
+- ✅ 三个 notebook JSON 均可正常解析
+- ✅ `results/` 清理后仅保留 formal_seed42（50 组）和 ablation_seed42（16 组）正式数据
+
+**下一步任务**：
+1. 在 CUDA 环境上运行三个模型的超参搜索（每模型约 1.5 小时）
+2. 按 `best_val_loss` 排序选出每个模型的 Top-1 配置
+3. 创建 `configs/{informer,autoformer,patchtst}_top1.json` 正式实验配置
+4. 在 `scripts/run_experiments.py` 中注册 top1 模型入口
+5. 用 top1 配置跑全部正式实验矩阵（ETTh1/ETTm1 × 5 horizons）
+
+
+## LSTM / Transformer 调参 Notebook 补齐 ✅
+
+**完成时间**：2026-06-14
+
+**完成内容**：
+1. ✅ 创建 `notebooks/tune_lstm.ipynb`，对应 `scripts/tune_lstm.py` 的交互式版本，包含搜索空间查看、dry-run 参数量验证、运行搜索和分析结果四个 section
+2. ✅ 创建 `notebooks/tune_transformer.ipynb`，对应 `scripts/tune_transformer.py` 的交互式版本，结构同上
+
+**修改的文件**：
+- `notebooks/tune_lstm.ipynb` - 新增 LSTM 超参搜索交互式 notebook
+- `notebooks/tune_transformer.ipynb` - 新增 Transformer 超参搜索交互式 notebook
+- `docs/progress.md` - 追加本次记录
+
+**测试结果**：
+- ✅ `notebooks/tune_lstm.ipynb` JSON 可正常解析
+- ✅ `notebooks/tune_transformer.ipynb` JSON 可正常解析
+- ✅ 两个 notebook 结构与已创建的 Informer/Autoformer/PatchTST 调参 notebook 一致
+
+## 删除过时训练 Notebook ✅
+
+**完成时间**：2026-06-14
+
+**完成内容**：
+1. ✅ 删除 `notebooks/train_baseline.ipynb`（已被 `scripts/run_experiments.py` + JSON config 完全替代）
+2. ✅ 删除 `notebooks/train_variants.ipynb`（同上）
+
+**删除的文件**：
+- `notebooks/train_baseline.ipynb`
+- `notebooks/train_variants.ipynb`
+
+**删除原因**：
+- 两个 notebook 硬编码配置（`LSTMConfig`/`TransformerConfig`/`MODELS_TO_RUN`），与 CLI 脚本和 JSON config 脱节
+- 训练逻辑已被 `scripts/run_experiments.py` 完全覆盖，notebook 版本无额外价值
+- 手动改单元格切模型/数据集不如 CLI 灵活
+
+**当前 notebooks 目录**：
+- `data_preparation.ipynb` - 数据预处理
+- `tune_lstm.ipynb` - LSTM 超参搜索
+- `tune_transformer.ipynb` - Transformer 超参搜索
+- `tune_informer.ipynb` - Informer 超参搜索
+- `tune_autoformer.ipynb` - Autoformer 超参搜索
+- `tune_patchtst.ipynb` - PatchTST 超参搜索
+- `visualize_results.ipynb` - 可视化分析
+- `univariate_multivariate_comparison.ipynb` - 单变量/多变量对比
+
+**上下文说明**：
+- LSTM 超参搜索脚本和配置已于 2026-06-10 完成（`scripts/tune_lstm.py`、`configs/lstm_search.json`、`configs/lstm_top1.json`）
+- Transformer 超参搜索脚本和配置也已于 2026-06-10 完成（`scripts/tune_transformer.py`、`configs/transformer_search.json`、`configs/transformer_top1.json`）
+- 本次仅补齐对应的 Jupyter notebook，使 LSTM/Transformer 与 Informer/Autoformer/PatchTST 的调参工具保持一致
+
+
+## 五模型展示 Notebook 创建 ✅
+
+**完成时间**：2026-06-14
+
+**完成内容**：
+1. ✅ 创建 `notebooks/model_lstm.ipynb` — LSTM 模型架构、快速训练、评估指标和可视化
+2. ✅ 创建 `notebooks/model_transformer.ipynb` — Transformer 编码器模型展示
+3. ✅ 创建 `notebooks/model_informer.ipynb` — Informer 模型展示（含 ProbSparse 注意力说明）
+4. ✅ 创建 `notebooks/model_autoformer.ipynb` — Autoformer 模型展示（含序列分解可视化）
+5. ✅ 创建 `notebooks/model_patchtst.ipynb` — PatchTST 模型展示（含 Patch Embedding 可视化）
+
+**修改的文件**：
+- `notebooks/model_lstm.ipynb` - 新增 LSTM 模型展示 notebook
+- `notebooks/model_transformer.ipynb` - 新增 Transformer 模型展示 notebook
+- `notebooks/model_informer.ipynb` - 新增 Informer 模型展示 notebook
+- `notebooks/model_autoformer.ipynb` - 新增 Autoformer 模型展示 notebook
+- `notebooks/model_patchtst.ipynb` - 新增 PatchTST 模型展示 notebook
+- `docs/progress.md` - 追加本次记录
+
+**每个 notebook 的结构**：
+1. **模型架构** — 架构图 + 参数量对比 + 前向传播验证
+2. **快速训练** — sample_limit=512, epochs=5, 验证跑通性
+3. **评估指标** — 全变量 MSE/MAE/R²/MAPE + 目标列指标
+4. **可视化** — 训练损失曲线 + 预测 vs 真实对比
+
+**模型特有可视化**：
+- Informer：ProbSparse 注意力计算量说明（Top-K query 选择）
+- Autoformer：序列分解（趋势/季节性）可视化（3 张子图）
+- PatchTST：Patch Embedding 热力图 + Channel Independence 说明
+
+**同时删除的过时文件**：
+- `notebooks/train_baseline.ipynb` — 已被 CLI 脚本 + 调参 notebook 替代
+- `notebooks/train_variants.ipynb` — 同上
+
+**当前 notebooks 目录**：
+- `data_preparation.ipynb` — 数据预处理
+- `model_lstm.ipynb` — LSTM 模型展示
+- `model_transformer.ipynb` — Transformer 模型展示
+- `model_informer.ipynb` — Informer 模型展示
+- `model_autoformer.ipynb` — Autoformer 模型展示
+- `model_patchtst.ipynb` — PatchTST 模型展示
+- `tune_lstm.ipynb` — LSTM 超参搜索
+- `tune_transformer.ipynb` — Transformer 超参搜索
+- `tune_informer.ipynb` — Informer 超参搜索
+- `tune_autoformer.ipynb` — Autoformer 超参搜索
+- `tune_patchtst.ipynb` — PatchTST 超参搜索
+- `visualize_results.ipynb` — 可视化分析
+- `univariate_multivariate_comparison.ipynb` — 单变量/多变量对比

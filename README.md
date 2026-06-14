@@ -117,6 +117,10 @@ python scripts/run_experiments.py \
   --sample-limit 64 \
   --batch-size 8 \
   --seed 42
+
+# ECL 快速实验汇总表
+# results/v1_csv/ecl/ecl_smoke_optv2_summary.csv
+# results/v1_md/ecl/ecl_smoke_optv2_summary.md
 ```
 
 结果目录分类：
@@ -137,3 +141,5 @@ results/
 ## 当前进度
 
 进度记录见 `docs/progress.md`，实施步骤见 `docs/step/项目步骤.md`。第 6 步分析见 `docs/step/analysis_step6.md`，实验报告草稿见 `docs/report/experiment_report_demo.md`，实验论文稿见 `docs/report/experiment_paper.md`。
+
+当前主实验正式结果覆盖 ETTh1/ETTm1。ECL 已完成 h96 高维快速验证（321 变量、smoke 样本、Informer/PatchTST），用于确认高维流程可运行；ECL 正式全量实验尚未进行。

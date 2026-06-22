@@ -5,7 +5,7 @@
 
 ## 摘要
 
-长时序预测需要在较长历史窗口内识别趋势、周期和局部波动，并在多步预测中控制误差累积。针对这一问题，本文基于统一的数据预处理、训练和评估框架，对 LSTM、标准 Transformer、Informer、Autoformer 与 PatchTST 五类模型进行对比实验。实验使用 ETTh1 与 ETTm1 两个电力变压器温度数据集，统一采用 96 步回看窗口，并设置 24、48、96、168 和 336 五个预测步长。核心实验共完成 50 组正式训练，主要评价指标包括 MSE、MAE 和 R2，并补充统计 MAPE 与目标列 MAPE；同时围绕 Autoformer 的序列分解与自相关机制、PatchTST 的 patching 与通道独立建模设计 16 组消融实验。结果表明，PatchTST 在 ETTh1 的五个预测步长上均取得最低 MSE，Autoformer 在 ETTm1 的五个预测步长上均取得最低 MSE。跨数据集和步长平均后，PatchTST 的 MSE 最低，为 0.469335，Autoformer 次之，为 0.514711。消融结果进一步显示，移除 PatchTST 的通道独立建模会使平均 MSE 上升 162.25%，移除 Autoformer 的序列分解模块会使平均 MSE 上升 81.48%。这些结果说明，面向长时序预测的结构设计需要同时关注局部片段建模、变量间干扰控制以及趋势和周期分解。本文的结论限定于当前轻量实现、单随机种子和 ETTh1/ETTm1 主实验范围，ECL 高维数据仍需在后续实验中补充验证。
+长时序预测需要在较长历史窗口内识别趋势、周期和局部波动，并在多步预测中控制误差累积。针对这一问题，本文基于统一的数据预处理、训练和评估框架，对 LSTM、标准 Transformer、Informer、Autoformer 与 PatchTST 五类模型进行对比实验。实验使用 ETTh1 与 ETTm1 两个电力变压器温度数据集，统一采用 96 步回看窗口，并设置 24、48、96、168 和 336 五个预测步长。核心实验共完成 50 组正式训练，主要评价指标包括 MSE、MAE 和 R2，并补充统计 MAPE 与目标列 MAPE；同时围绕 Autoformer 的序列分解与自相关机制、PatchTST 的 patching 与通道独立建模设计 16 组消融实验。结果表明，PatchTST 在 ETTh1 的五个预测步长上均取得最低 MSE，Autoformer 在 ETTm1 的五个预测步长上均取得最低 MSE。跨数据集和步长平均后，PatchTST 的 MSE 最低，为 0.469335，Autoformer 次之，为 0.514711。消融结果进一步显示，移除 PatchTST 的通道独立建模会使平均 MSE 上升 162.25%，移除 Autoformer 的序列分解模块会使平均 MSE 上升 81.48%。这些结果说明，面向长时序预测的结构设计需要同时关注局部片段建模、变量间干扰控制以及趋势和周期分解。本文的结论限定于当前轻量实现、单随机种子和 ETTh1/ETTm1 两个数据集范围。
 
 **关键词**：长时序预测；LSTM；Transformer；Informer；Autoformer；PatchTST；消融实验
 
@@ -80,7 +80,7 @@ PatchTST 借鉴视觉 Transformer 中 patch 的思想，将连续时间点切分
 
 ### 4.1 数据集
 
-实验使用 ETTh1 和 ETTm1 两个公开电力变压器温度数据集作为主结果来源。项目中保留了 ECL 数据集，当前完整正式结果矩阵主要覆盖 ETTh1 和 ETTm1；ECL 已补充 h96 高维快速验证，作为附录实验用于确认 321 变量场景下训练流程可运行，但尚未进入正式主结果矩阵。
+实验使用 ETTh1 和 ETTm1 两个公开电力变压器温度数据集作为主结果来源。当前完整正式结果矩阵覆盖 ETTh1 和 ETTm1；其他公开数据集不纳入本文正式实验口径。
 
 | 数据集 | 变量数 | 频率 | 切分方式 | 说明 |
 | --- | ---: | --- | --- | --- |
@@ -111,7 +111,7 @@ PatchTST 借鉴视觉 Transformer 中 patch 的思想，将连续时间点切分
 
 MAPE 表示平均绝对百分比误差，形式为 \(\frac{100\%}{n}\sum|\frac{y-\hat{y}}{y}|\)。该指标便于用百分比理解预测误差，但对真实值接近零的样本非常敏感。由于本文指标基于标准化后的序列计算，部分变量会在零附近波动，导致全变量 MAPE 明显放大。因此本文仍以 MSE、MAE 和 R2 作为主指标，MAPE 仅作为补充参考；其中 `MAPE_target` 比全变量 MAPE 更适合辅助观察目标列预测误差。
 
-为补充分析输入变量范围对目标列预测的影响，本文新增单变量与多变量对比实验。单变量口径只输入目标列并只预测目标列；多变量口径保留全部变量输入和输出，并用目标列指标进行公平比较。代表性实验覆盖 ETTh1、ETTm1 的 h96 和 h336，以及 LSTM、Transformer、Autoformer、PatchTST 四个模型。考虑到该对比主要用于观察输入口径差异，当前版本使用 `sample_limit=512` 和最多 5 个 epoch 的快速配置，结果文件见 `results/v1_csv/feature_mode/feature_mode_seed42_comparison.csv` 和 `results/v1_csv/feature_mode/feature_mode_seed42_comparison_delta.csv`；全量正式对比可将 `configs/univariate_multivariate_comparison.json` 中的 `sample_limit` 改为 0 后重跑。
+为补充分析输入变量范围对目标列预测的影响，本文新增单变量与多变量对比实验。单变量口径只输入目标列并只预测目标列；多变量口径保留全部变量输入和输出，并用目标列指标进行公平比较。代表性实验覆盖 ETTh1、ETTm1 的 h96 和 h336，以及 LSTM、Transformer、Autoformer、PatchTST 四个模型。考虑到该对比主要用于观察输入口径差异，当前版本使用 `sample_limit=512` 和最多 5 个 epoch 的快速配置，结果文件见 `results/univariate_multivariate_csv/feature_mode/feature_mode_seed42_comparison.csv` 和 `results/univariate_multivariate_csv/feature_mode/feature_mode_seed42_comparison_delta.csv`；全量正式对比可将 `configs/univariate_multivariate_comparison.json` 中的 `sample_limit` 改为 0 后重跑。
 
 ## 5 实验结果与分析
 
@@ -241,13 +241,13 @@ ETTh1 与 ETTm1 的最优模型不同，说明长时序预测模型的适用性�
 
 ### 7.5 局限性
 
-本文结果存在三个主要边界。第一，当前正式主实验只覆盖 ETTh1 和 ETTm1，ECL 高维数据尚未形成完整主结果矩阵，因此不能直接推广到高维电力负荷预测场景。第二，所有正式结果基于单随机种子 42，尚未报告多随机种子的均值和方差。第三，当前模型实现为课程项目中的轻量版本，与原论文完整配置可能存在差异，因此本文更适合说明统一实现下的相对趋势，而不是复现原论文最优指标。
+本文结果存在三个主要边界。第一，当前正式主实验只覆盖 ETTh1 和 ETTm1 两个 ETT 数据集，因此结论主要反映这两类频率设置下的相对趋势。第二，所有正式结果基于单随机种子 42，尚未报告多随机种子的均值和方差。第三，当前模型实现为课程项目中的轻量版本，与原论文完整配置可能存在差异，因此本文更适合说明统一实现下的相对趋势，而不是复现原论文最优指标。
 
 ## 8 结论
 
 本文基于统一训练和评估框架，对 LSTM、Transformer、Informer、Autoformer 与 PatchTST 在长时序预测任务中的表现进行了系统比较。实验结果显示，PatchTST 在 ETTh1 的五个预测步长上均取得最低 MSE，Autoformer 在 ETTm1 的五个预测步长上均取得最低 MSE。跨数据集平均后，PatchTST 取得最低平均 MSE，Autoformer 次之，二者明显优于 LSTM、标准 Transformer 和 Informer。
 
-消融实验进一步表明，PatchTST 的通道独立建模和 Autoformer 的序列分解模块对性能提升贡献最大。预测曲线和残差图说明，即使最优模型能够较好捕捉主要趋势和周期，长步长预测仍存在远期误差累积、局部突变拟合不足和预测平滑化等问题。后续工作可从三个方向推进：补充 ECL 高维正式实验，进行多随机种子重复验证，以及围绕 patch 长度、分解窗口、模型宽度和 Auto-Correlation 配置开展系统调参。
+消融实验进一步表明，PatchTST 的通道独立建模和 Autoformer 的序列分解模块对性能提升贡献最大。预测曲线和残差图说明，即使最优模型能够较好捕捉主要趋势和周期，长步长预测仍存在远期误差累积、局部突变拟合不足和预测平滑化等问题。后续工作可从两个方向推进：进行多随机种子重复验证，以及围绕 patch 长度、分解窗口、模型宽度和 Auto-Correlation 配置开展系统调参。
 
 ## 参考文献
 
@@ -258,18 +258,7 @@ ETTh1 与 ETTm1 的最优模型不同，说明长时序预测模型的适用性�
 [5] Nie Y, Nguyen N H, Sinthong P, Kalagnanam J. A Time Series is Worth 64 Words: Long-term Forecasting with Transformers. ICLR, 2023.  
 [6] 项目文档与实验结果：`docs/knowledge/model_introduction.md`、`docs/step/analysis_step6.md`、`results/v1_csv/formal/formal_seed42_all.csv`、`results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`。
 
-## 附录 A ECL 高维快速验证
-
-ECL 数据集包含 321 个变量，变量规模明显高于 ETTh1 和 ETTm1。为先验证高维数据训练流程，本文使用 `data/processed_smoke/ECL` 进行 h96 快速实验：预处理保留全部 321 个变量，但每个 split 最多保留 256 个窗口；训练时使用 `sample_limit=64`、`batch_size=8`、`epochs=1`，模型覆盖 Informer 与 PatchTST。该实验仅作为附录快速验证，不等同于正式全量实验。
-
-| 模型 | MSE | MAE | R2 | MSE_target | 训练时间(s) |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Informer | 0.956632 | 0.809218 | -0.174003 | 0.987505 | 0.743 |
-| PatchTST | 0.746415 | 0.720228 | 0.083981 | 0.981285 | 0.880 |
-
-结果显示，在该快速配置下 PatchTST 的全变量 MSE 和 R2 优于 Informer，目标列 MSE 也略低。由于训练样本和轮数非常有限，该结果主要说明高维流程已经跑通，不能替代 ECL 正式实验结论。
-
-## 附录 B 术语与缩写
+## 附录 A 术语与缩写
 
 | 术语 | 含义 | 本文使用方式 |
 | --- | --- | --- |
@@ -293,10 +282,10 @@ ECL 数据集包含 321 个变量，变量规模明显高于 ETTh1 和 ETTm1。�
 - `results/v1_md/formal/formal_seed42_mape.md`
 - `results/v1_csv/formal/formal_seed42_mape_by_model.csv`
 - `results/v1_md/formal/formal_seed42_mape_by_model.md`
-- `results/v1_csv/feature_mode/feature_mode_seed42_comparison.csv`
-- `results/v1_md/feature_mode/feature_mode_seed42_comparison.md`
-- `results/v1_csv/feature_mode/feature_mode_seed42_comparison_delta.csv`
-- `results/v1_md/feature_mode/feature_mode_seed42_comparison_delta.md`
+- `results/univariate_multivariate_csv/feature_mode/feature_mode_seed42_comparison.csv`
+- `results/univariate_multivariate_md/feature_mode/feature_mode_seed42_comparison.md`
+- `results/univariate_multivariate_csv/feature_mode/feature_mode_seed42_comparison_delta.csv`
+- `results/univariate_multivariate_md/feature_mode/feature_mode_seed42_comparison_delta.md`
 - `results/v1_csv/ecl/ecl_smoke_optv2_summary.csv`
 - `results/v1_md/ecl/ecl_smoke_optv2_summary.md`
 - `results/v1_csv/ablation/ablation_seed42_summary.csv`

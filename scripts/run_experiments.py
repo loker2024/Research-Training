@@ -31,6 +31,46 @@ from models import (  # noqa: E402
     TransformerModel,
 )
 
+# 消融实验只改变被检验模块，其余结构参数继承 ETTh1 h96 验证集最优配置。
+ABLATION_TUNED_MODEL_CONFIGS = {
+    "autoformer": {
+        "d_model": 64,
+        "n_heads": 4,
+        "n_encoder_layers": 2,
+        "n_decoder_layers": 1,
+        "d_ff": 128,
+        "factor": 3,
+        "dropout": 0.1,
+        "kernel_size": 25,
+    },
+    "patchtst": {
+        "d_model": 64,
+        "n_heads": 8,
+        "n_layers": 2,
+        "d_ff": 128,
+        "patch_len": 32,
+        "stride": 8,
+        "dropout": 0.1,
+    },
+}
+
+ABLATION_TUNED_TRAINING_CONFIG = {
+    "epochs": 50,
+    "patience": 10,
+    "batch_size": 128,
+    "lr": 0.001,
+    "weight_decay": 0.00001,
+}
+
+ABLATION_MODEL_CONFIGS = {
+    "autoformer_ablation_base": dict(ABLATION_TUNED_MODEL_CONFIGS["autoformer"]),
+    "autoformer_no_decomp": dict(ABLATION_TUNED_MODEL_CONFIGS["autoformer"]),
+    "autoformer_no_autocorr": dict(ABLATION_TUNED_MODEL_CONFIGS["autoformer"]),
+    "patchtst_ablation_base": dict(ABLATION_TUNED_MODEL_CONFIGS["patchtst"]),
+    "patchtst_no_patch": dict(ABLATION_TUNED_MODEL_CONFIGS["patchtst"]),
+    "patchtst_channel_mix": dict(ABLATION_TUNED_MODEL_CONFIGS["patchtst"]),
+}
+
 
 MODEL_BUILDERS = {
     "lstm": lambda input_size, horizon: LSTMModel(
@@ -80,6 +120,17 @@ MODEL_BUILDERS = {
         dropout=0.1,
         horizon=horizon,
     ),
+    # --- 重做消融实验基线：与各消融变体使用同一批次和调优后结构参数 ---
+    "autoformer_ablation_base": lambda input_size, horizon: AutoformerModel(
+        input_size=input_size,
+        horizon=horizon,
+        **ABLATION_MODEL_CONFIGS["autoformer_ablation_base"],
+    ),
+    "patchtst_ablation_base": lambda input_size, horizon: PatchTSTModel(
+        input_size=input_size,
+        horizon=horizon,
+        **ABLATION_MODEL_CONFIGS["patchtst_ablation_base"],
+    ),
     "transformer_top1": lambda input_size, horizon: TransformerModel(
         input_size=input_size,
         d_model=128,
@@ -92,41 +143,23 @@ MODEL_BUILDERS = {
     # --- 消融变体 ---
     "autoformer_no_decomp": lambda input_size, horizon: AutoformerNoDecomp(
         input_size=input_size,
-        d_model=64,
-        n_heads=4,
-        n_encoder_layers=2,
-        n_decoder_layers=1,
-        d_ff=128,
-        dropout=0.1,
         horizon=horizon,
+        **ABLATION_MODEL_CONFIGS["autoformer_no_decomp"],
     ),
     "autoformer_no_autocorr": lambda input_size, horizon: AutoformerNoAutocorr(
         input_size=input_size,
-        d_model=64,
-        n_heads=4,
-        n_encoder_layers=2,
-        n_decoder_layers=1,
-        d_ff=128,
-        dropout=0.1,
         horizon=horizon,
+        **ABLATION_MODEL_CONFIGS["autoformer_no_autocorr"],
     ),
     "patchtst_no_patch": lambda input_size, horizon: PatchTSTNoPatch(
         input_size=input_size,
-        d_model=64,
-        n_heads=4,
-        n_layers=2,
-        d_ff=128,
-        dropout=0.1,
         horizon=horizon,
+        **ABLATION_MODEL_CONFIGS["patchtst_no_patch"],
     ),
     "patchtst_channel_mix": lambda input_size, horizon: PatchTSTChannelMix(
         input_size=input_size,
-        d_model=64,
-        n_heads=4,
-        n_layers=2,
-        d_ff=128,
-        dropout=0.1,
         horizon=horizon,
+        **ABLATION_MODEL_CONFIGS["patchtst_channel_mix"],
     ),
 }
 
@@ -303,6 +336,7 @@ def run_one(args, dataset_name: str, horizon: int, model_name: str) -> dict:
         "test_samples": len(test_loader.dataset),
         "input_size": input_size,
         "target_idx": target_idx,
+        "model_config": ABLATION_MODEL_CONFIGS.get(model_name),
         "model_params": count_parameters(model),
         "train_time_seconds": train_seconds,
         "history": history,

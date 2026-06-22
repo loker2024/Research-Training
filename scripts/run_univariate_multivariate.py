@@ -24,6 +24,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from models import TimeSeriesDataset, Trainer  # noqa: E402
+from models import (  # noqa: E402
+    AutoformerModel,
+    InformerModel,
+    LSTMModel,
+    PatchTSTModel,
+    TransformerModel,
+)
 from scripts.run_experiments import (  # noqa: E402
     MODEL_BUILDERS,
     count_parameters,
@@ -35,8 +42,81 @@ from scripts.run_experiments import (  # noqa: E402
 
 DEFAULT_MODELS = "lstm,transformer,autoformer,patchtst"
 RESULT_ROOT = ROOT / "results" / "univariate_multivariate"
-CSV_DIR = ROOT / "results" / "v1_csv" / "feature_mode"
-MD_DIR = ROOT / "results" / "v1_md" / "feature_mode"
+CSV_DIR = ROOT / "results" / "univariate_multivariate_csv" / "feature_mode"
+MD_DIR = ROOT / "results" / "univariate_multivariate_md" / "feature_mode"
+
+
+VALIDATION_BEST_CONFIGS = {
+    "lstm": {
+        "source_experiment": "test_results/h96/ETTh1/lstm/ETTh1_h96_lstm_h256_l1_dp01_lr0.001_wd0.0_summary.json",
+        "selection_metric": {"best_val_loss": 0.8898224516826517, "best_val_r2": 0.3434822692590601},
+        "model": {"hidden_size": 256, "num_layers": 1, "dropout": 0.1},
+    },
+    "transformer": {
+        "source_experiment": "test_results/h96/ETTh1/transformer/ETTh1_h96_transformer_d128_h4_l2_ff128_dp01_lr0.0001_wd0.0_summary.json",
+        "selection_metric": {"best_val_loss": 0.9057894443764406, "best_val_r2": 0.30944681097479426},
+        "model": {"d_model": 128, "nhead": 4, "num_layers": 2, "dim_feedforward": 128, "dropout": 0.1},
+    },
+    "informer": {
+        "source_experiment": "test_results/h96/ETTh1/informer/ETTh1_h96_informer_d64_h4_enc2_dec2_ff256_fac3_dp01_summary.json",
+        "selection_metric": {"best_val_loss": 0.8180458586005603, "best_val_r2": 0.3553355616681716},
+        "model": {
+            "d_model": 64,
+            "n_heads": 4,
+            "n_encoder_layers": 2,
+            "n_decoder_layers": 2,
+            "d_ff": 256,
+            "factor": 3,
+            "dropout": 0.1,
+        },
+    },
+    "autoformer": {
+        "source_experiment": "test_results/h96/ETTh1/autoformer/ETTh1_h96_autoformer_d64_h4_enc2_dec1_ff128_fac3_ks25_summary.json",
+        "selection_metric": {"best_val_loss": 0.6663595385411206, "best_val_r2": 0.45639897795284495},
+        "model": {
+            "d_model": 64,
+            "n_heads": 4,
+            "n_encoder_layers": 2,
+            "n_decoder_layers": 1,
+            "d_ff": 128,
+            "factor": 3,
+            "dropout": 0.1,
+            "kernel_size": 25,
+        },
+    },
+    "patchtst": {
+        "source_experiment": "test_results/h96/ETTh1/patchtst/ETTh1_h96_patchtst_d64_h8_l2_ff128_pl32_st8_dp01_summary.json",
+        "selection_metric": {"best_val_loss": 0.6808768481016159, "best_val_r2": 0.46077433333677403},
+        "model": {
+            "d_model": 64,
+            "n_heads": 8,
+            "n_layers": 2,
+            "d_ff": 128,
+            "patch_len": 32,
+            "stride": 8,
+            "dropout": 0.1,
+        },
+    },
+}
+
+
+def register_validation_best_builders() -> None:
+    """Use the same validation-selected model structures as the full-matrix run."""
+
+    model_classes = {
+        "lstm": LSTMModel,
+        "transformer": TransformerModel,
+        "informer": InformerModel,
+        "autoformer": AutoformerModel,
+        "patchtst": PatchTSTModel,
+    }
+    for model_name, cfg in VALIDATION_BEST_CONFIGS.items():
+        model_cls = model_classes[model_name]
+        model_kwargs = dict(cfg["model"])
+        MODEL_BUILDERS[model_name] = (
+            lambda input_size, horizon, model_cls=model_cls, model_kwargs=model_kwargs:
+            model_cls(input_size=input_size, horizon=horizon, **model_kwargs)
+        )
 
 
 class FeatureModeDataset(Dataset):
@@ -149,6 +229,18 @@ def get_parser(defaults: dict | None = None) -> argparse.ArgumentParser:
     parser.add_argument("--num-workers", type=int, default=defaults.get("num_workers", 0))
     parser.add_argument("--skip-existing", action="store_true", default=defaults.get("skip_existing", False))
     parser.add_argument("--no-tensorboard", action="store_true", default=defaults.get("no_tensorboard", True))
+    parser.add_argument(
+        "--use-validation-best",
+        action="store_true",
+        default=defaults.get("use_validation_best", True),
+        help="Use validation-selected model structures from the full-matrix run.",
+    )
+    parser.add_argument(
+        "--no-validation-best",
+        action="store_false",
+        dest="use_validation_best",
+        help="Use default MODEL_BUILDERS instead of validation-selected model structures.",
+    )
     return parser
 
 
@@ -162,6 +254,8 @@ def summary_paths(run_tag: str) -> tuple[Path, Path]:
 
 def run_one(args, dataset_name: str, horizon: int, model_name: str, mode: str) -> dict:
     set_seed(args.seed)
+    if getattr(args, "use_validation_best", True):
+        register_validation_best_builders()
     if model_name not in MODEL_BUILDERS:
         raise ValueError(f"Unknown model: {model_name}")
 
@@ -213,6 +307,10 @@ def run_one(args, dataset_name: str, horizon: int, model_name: str, mode: str) -
         "device": trainer.device,
         "seed": args.seed,
         "run_tag": args.run_tag,
+        "use_validation_best": getattr(args, "use_validation_best", True),
+        "validation_best_config": VALIDATION_BEST_CONFIGS.get(model_name)
+        if getattr(args, "use_validation_best", True)
+        else None,
         "data_dir": str(Path(args.data_dir)),
         "sample_limit": args.sample_limit,
         "train_samples": len(train_loader.dataset),
@@ -268,6 +366,7 @@ def flatten_summary(summary: dict) -> dict[str, object]:
         "model_params": summary.get("model_params"),
         "train_time_seconds": summary.get("train_time_seconds"),
         "device": summary.get("device"),
+        "use_validation_best": summary.get("use_validation_best"),
     }
 
 

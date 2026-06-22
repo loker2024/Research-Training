@@ -1,0 +1,12 @@
+{
+  "status": "finished",
+  "run_tag": "ablation_rerun_seed42",
+  "updated_at": "2026-06-22 15:20:10",
+  "completed_before_start": 19,
+  "pending_this_run": 5,
+  "missing_data": 0,
+  "current_index": null,
+  "current_total": null,
+  "current_experiment": null,
+  "error": null
+}

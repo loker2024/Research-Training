@@ -1,0 +1,19 @@
+{
+  "datasets": "ETTh1,ETTm1",
+  "horizons": "96,336",
+  "models": "autoformer_ablation_base,autoformer_no_decomp,autoformer_no_autocorr,patchtst_ablation_base,patchtst_no_patch,patchtst_channel_mix",
+  "epochs": 50,
+  "patience": 10,
+  "batch_size": 128,
+  "lr": 0.001,
+  "weight_decay": 0.00001,
+  "device": "auto",
+  "seed": 42,
+  "run_tag": "ablation_rerun_seed42",
+  "data_dir": "data/processed",
+  "sample_limit": 0,
+  "num_workers": 0,
+  "no_tensorboard": true,
+  "skip_existing": true,
+  "parameter_source": "docs/best_model_params.md (ETTh1 h96 validation best)"
+}

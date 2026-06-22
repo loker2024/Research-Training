@@ -14,12 +14,9 @@
 
 ## 必须优先补齐
 
-- [ ] ECL 高维数据正式或附录实验
-  - [x] 已完成 ECL h96 高维快速预处理数据：`data/processed_smoke/ECL`，保留 321 变量，每个 split 最多 256 个窗口
-  - [x] 已运行轻量模型组合验证：`informer,patchtst`，`sample_limit=64`，`run_tag=ecl_smoke_optv2`
-  - [x] 已生成 ECL 快速汇总表，并明确写入报告为“附录快速验证”
-  - [x] 已更新 `docs/progress.md`、`README.md` 和结果索引
-  - [ ] ECL 正式全量实验尚未进行：至少需覆盖 h96，如资源允许扩展到 h336 或五个 horizon
+- [x] 数据集范围确认
+  - [x] 当前项目正式实验和报告只采用 ETTh1、ETTm1 两个数据集
+  - [x] ECL 不再作为必须补齐的正式或附录实验
 
 - [x] 单变量 vs 多变量对比实验
   - [x] 明确单变量口径：只输入目标列并预测目标列

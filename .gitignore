@@ -31,6 +31,7 @@ test_results/
 *.ckpt
 *.npy
 !results/**/*.npy
+!archive/**/*.npy
 *.npz
 *.log
 events.out.tfevents.*
@@ -40,5 +41,7 @@ combined_visualization.png
 
 
 /data/raw/
+
+*.gz
 
 

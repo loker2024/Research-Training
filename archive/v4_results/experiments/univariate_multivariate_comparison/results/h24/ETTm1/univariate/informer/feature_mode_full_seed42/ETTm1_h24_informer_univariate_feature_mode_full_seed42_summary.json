@@ -1,0 +1,56 @@
+{
+  "dataset": "ETTm1",
+  "horizon": 24,
+  "model": "informer",
+  "feature_mode": "univariate",
+  "epochs": 50,
+  "trained_epochs": 25,
+  "best_epoch": 15,
+  "patience": 10,
+  "batch_size": 128,
+  "learning_rate": 0.001,
+  "weight_decay": 1e-05,
+  "device": "cuda",
+  "seed": 42,
+  "run_tag": "feature_mode_full_seed42",
+  "use_validation_best": true,
+  "validation_best_config": {
+    "source_experiment": "test_results/h96/ETTh1/informer/ETTh1_h96_informer_d64_h4_enc2_dec2_ff256_fac3_dp01_summary.json",
+    "selection_metric": {
+      "best_val_loss": 0.8180458586005603,
+      "best_val_r2": 0.3553355616681716
+    },
+    "model": {
+      "d_model": 64,
+      "n_heads": 4,
+      "n_encoder_layers": 2,
+      "n_decoder_layers": 2,
+      "d_ff": 256,
+      "factor": 3,
+      "dropout": 0.1
+    }
+  },
+  "data_dir": "data/processed",
+  "sample_limit": 0,
+  "train_samples": 34441,
+  "val_samples": 11401,
+  "test_samples": 23481,
+  "input_size": 1,
+  "original_input_size": 7,
+  "target_idx": 0,
+  "original_target_idx": 6,
+  "model_params": 181401,
+  "train_time_seconds": 156.28139424324036,
+  "metrics": {
+    "MSE": 0.01578361541032791,
+    "MAE": 0.08918870240449905,
+    "MAPE": 9.752219200134277,
+    "R2": 0.8989881277084351,
+    "MSE_target": 0.01578361541032791,
+    "MAE_target": 0.08918870240449905,
+    "MAPE_target": 9.752219200134277,
+    "R2_target": 0.8989881277084351
+  },
+  "best_val_loss": 0.024522316670562656,
+  "best_val_r2": 0.010699902640448676
+}

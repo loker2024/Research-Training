@@ -19,7 +19,7 @@
 
 ### 2.1 数据集
 
-本阶段主实验聚焦两个 ETT 数据集，ECL 暂不进入主结果矩阵；当前已补充 ECL h96 高维快速验证，作为附录实验说明 321 变量场景下训练流程可跑通。
+本阶段主实验聚焦 ETTh1 与 ETTm1 两个 ETT 数据集，其他公开数据集不纳入正式结果矩阵。
 
 | 数据集 | 变量数 | 频率 | 切分方式 | 说明 |
 | --- | ---: | --- | --- | --- |
@@ -136,17 +136,6 @@ ETTh1 上 PatchTST 在五个 horizon 中全部领先，说明 patch 化输入和
 
 在这版快速实验中，单变量输入在多数目标列预测上更占优，说明额外变量可能带来优化难度或变量间噪声。PatchTST 在 ETTh1 h96 上从多变量输入受益，符合其通道独立建模可以缓解变量干扰的设计直觉。由于该对比是小样本快速实验，结论应作为补充观察；全量正式对比可将 `configs/univariate_multivariate_comparison.json` 中的 `sample_limit` 改为 `0` 后重跑。
 
-### 4.6 ECL 高维快速验证
-
-ECL 包含 321 个变量，变量规模明显高于 ETT 数据集。当前使用 `data/processed_smoke/ECL` 完成 h96 快速实验：预处理保留全部变量，每个 split 最多 256 个窗口；训练时 `sample_limit=64`、`batch_size=8`、`epochs=1`，覆盖 Informer 与 PatchTST。
-
-| model | MSE | MAE | R2 | MSE_target |
-| --- | ---: | ---: | ---: | ---: |
-| informer | 0.956632 | 0.809218 | -0.174003 | 0.987505 |
-| patchtst | 0.746415 | 0.720228 | 0.083981 | 0.981285 |
-
-结果显示 PatchTST 在高维快速验证中全变量 MSE 和 R² 优于 Informer，目标列 MSE 也略低。该结果仅说明高维流程已经跑通，并作为附录快速实验保留；ECL 正式全量实验仍需后续补充。
-
 ## 5. 预测曲线与残差分析
 
 预测曲线使用已有 `formal_seed42` checkpoint 对测试集首批样本进行推理，不重新训练模型。目标列经过反归一化后绘制。
@@ -215,7 +204,7 @@ ETT 数据具有明显周期性和趋势性。Autoformer 通过序列分解显�
 2. `epochs=20` 与 `patience=5` 在当前规模下可以较快完成正式实验，同时避免明显过拟合。
 3. 使用 `run_tag` 区分 `formal_seed42`、`ablation_seed42`、smoke 等实验非常重要，可避免结果覆盖和汇总混入临时实验。
 4. Windows 环境下应优先确认 CUDA 环境，避免误用 CPU Python 解释器造成训练耗时异常。
-5. 对 ECL 这类高维数据，应先做 smoke 或附录实验，再决定是否进入完整主矩阵。
+5. 后续扩展数据集时，应先做小规模 smoke 验证，再决定是否纳入完整主矩阵。
 
 ## 9. 结论与展望
 
@@ -227,7 +216,7 @@ ETT 数据具有明显周期性和趋势性。Autoformer 通过序列分解显�
 4. 消融实验验证了结构贡献：PatchTST 的 channel independence 与 Autoformer 的 series decomposition 是最关键模块。
 5. 长步长预测仍存在明显误差累积，预测曲线和残差图显示模型对突变与远期细节仍不够敏感。
 
-后续工作可从三个方向继续推进：第一，补充 ECL 高维数据实验，验证模型在大变量规模下的泛化能力；第二，对 Autoformer 和 PatchTST 做更系统的超参数搜索，例如 patch length、模型宽度、分解窗口等；第三，引入多随机种子重复实验，报告均值和方差，提高结论稳健性。
+后续工作可从两个方向继续推进：第一，对 Autoformer 和 PatchTST 做更系统的超参数搜索，例如 patch length、模型宽度、分解窗口等；第二，引入多随机种子重复实验，报告均值和方差，提高结论稳健性。
 
 ## 附：主要结果文件
 
@@ -237,12 +226,10 @@ ETT 数据具有明显周期性和趋势性。Autoformer 通过序列分解显�
 - `results/v1_md/formal/formal_seed42_mape.md`
 - `results/v1_csv/formal/formal_seed42_mape_by_model.csv`
 - `results/v1_md/formal/formal_seed42_mape_by_model.md`
-- `results/v1_csv/feature_mode/feature_mode_seed42_comparison.csv`
-- `results/v1_md/feature_mode/feature_mode_seed42_comparison.md`
-- `results/v1_csv/feature_mode/feature_mode_seed42_comparison_delta.csv`
-- `results/v1_md/feature_mode/feature_mode_seed42_comparison_delta.md`
-- `results/v1_csv/ecl/ecl_smoke_optv2_summary.csv`
-- `results/v1_md/ecl/ecl_smoke_optv2_summary.md`
+- `results/univariate_multivariate_csv/feature_mode/feature_mode_seed42_comparison.csv`
+- `results/univariate_multivariate_md/feature_mode/feature_mode_seed42_comparison.md`
+- `results/univariate_multivariate_csv/feature_mode/feature_mode_seed42_comparison_delta.csv`
+- `results/univariate_multivariate_md/feature_mode/feature_mode_seed42_comparison_delta.md`
 - `results/v1_csv/ablation/ablation_seed42_summary.csv`
 - `results/v1_md/ablation/ablation_seed42_summary.md`
 - `results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`

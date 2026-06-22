@@ -323,8 +323,9 @@ class PatchTSTNoPatch(nn.Module):
 class PatchTSTChannelMix(nn.Module):
     """消融：混合多变量输入替代 Channel Independence。
 
-    不按变量独立建模，直接将所有变量拼接后投影到 d_model，经 Transformer 编码后
-    一次性输出所有变量的预测。
+    保留与原 PatchTST 相同的时间 patching，只把 patch embedding 从逐变量共享的
+    单通道卷积改为多变量联合卷积，再一次性输出所有变量的预测。这样该变体只检验
+    Channel Independence，不会同时移除 Patching。
 
     输入: (batch, lookback, features)
     输出: (batch, horizon, features)
@@ -337,10 +338,22 @@ class PatchTSTChannelMix(nn.Module):
         self.d_model = d_model
         self.horizon = horizon
         self.lookback = 96
+        self.patch_len = patch_len
+        self.stride = stride
+        self.num_patches = (self.lookback - patch_len) // stride + 1
 
-        # 直接投影所有变量
-        self.input_projection = nn.Linear(input_size, d_model)
-        self.position_encoding = nn.Parameter(torch.randn(1, self.lookback, d_model) * 0.02)
+        # 保留时间 patching，但在每个 patch 内联合混合全部变量。
+        self.patch_projection = nn.Conv1d(
+            in_channels=input_size,
+            out_channels=d_model,
+            kernel_size=patch_len,
+            stride=stride,
+        )
+        self.patch_norm = nn.LayerNorm(d_model)
+        self.patch_dropout = nn.Dropout(dropout)
+        self.position_encoding = nn.Parameter(
+            torch.randn(1, self.num_patches, d_model) * 0.02
+        )
 
         from .patchtst import PatchTSTEncoder
         self.encoder = PatchTSTEncoder(d_model, n_heads, n_layers, d_ff, dropout)
@@ -354,12 +367,16 @@ class PatchTSTChannelMix(nn.Module):
 
     def forward(self, x):
         B, L, C = x.shape
-        # 直接混合所有变量: (B, L, C) -> (B, L, d_model)
-        h = self.input_projection(x)
-        if h.shape[1] <= self.position_encoding.shape[1]:
-            h = h + self.position_encoding[:, :h.shape[1], :]
+        if C != self.input_size:
+            raise ValueError(f"期望 {self.input_size} 个变量，实际收到 {C} 个")
 
-        encoded = self.encoder(h)  # (B, L, d_model)
+        # (B, L, C) -> (B, C, L) -> (B, num_patches, d_model)
+        h = self.patch_projection(x.transpose(1, 2)).transpose(1, 2)
+        h = self.patch_norm(h)
+        h = self.patch_dropout(h)
+        h = h + self.position_encoding[:, :h.shape[1], :]
+
+        encoded = self.encoder(h)  # (B, num_patches, d_model)
         pred = self.head(encoded.transpose(1, 2))  # (B, horizon * input_size)
         output = pred.view(B, self.horizon, self.input_size)
         return output

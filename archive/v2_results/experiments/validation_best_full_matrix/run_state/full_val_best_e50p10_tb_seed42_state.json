@@ -1,0 +1,13 @@
+{
+  "status": "finished",
+  "run_tag": "full_val_best_e50p10_tb_seed42",
+  "updated_at": "2026-06-15 14:37:39",
+  "completed_before_start": 50,
+  "pending_this_run": 0,
+  "missing_data": 25,
+  "current_index": null,
+  "current_total": null,
+  "current_experiment": null,
+  "current_model_config": null,
+  "error": null
+}

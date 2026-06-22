@@ -4,15 +4,14 @@
 
 ## 项目范围
 
-当前实验聚焦 3 个数据集：
+当前正式实验聚焦 2 个 ETT 数据集：
 
 | 数据集 | 变量数 | 频率 | 切分方式 |
 | --- | ---: | --- | --- |
 | ETTh1 | 7 | 小时 | 前 12 月 / 4 月 / 4 月 |
 | ETTm1 | 7 | 15 分钟 | 前 12 月 / 4 月 / 4 月 |
-| ECL | 321 | 小时 | 70% / 10% / 20% |
 
-回看窗口为 96。当前预处理 notebook 生成了 24、48、96、168、336 五组预测步长，核心实验可按项目要求优先报告 96、168、336。
+回看窗口为 96。当前预处理 notebook 生成了 24、48、96、168、336 五组预测步长，正式结果与报告口径均以 ETTh1、ETTm1 为准。
 
 ## 目录结构
 
@@ -101,26 +100,6 @@ python scripts/run_experiments.py \
   --run-tag optv2 \
   --seed 42
 
-# ECL 高维数据先使用单独 smoke 目录验证流程
-python scripts/preprocess_data.py \
-  --datasets ECL \
-  --horizons 96 \
-  --output-dir data/processed_smoke \
-  --max-samples-per-split 256
-
-python scripts/run_experiments.py \
-  --data-dir data/processed_smoke \
-  --datasets ECL \
-  --horizons 96 \
-  --models informer,patchtst \
-  --run-tag ecl_smoke_optv2 \
-  --sample-limit 64 \
-  --batch-size 8 \
-  --seed 42
-
-# ECL 快速实验汇总表
-# results/v1_csv/ecl/ecl_smoke_optv2_summary.csv
-# results/v1_md/ecl/ecl_smoke_optv2_summary.md
 ```
 
 结果目录分类：
@@ -142,4 +121,4 @@ results/
 
 进度记录见 `docs/progress.md`，实施步骤见 `docs/step/项目步骤.md`。第 6 步分析见 `docs/step/analysis_step6.md`，实验报告草稿见 `docs/report/experiment_report_demo.md`，实验论文稿见 `docs/report/experiment_paper.md`。
 
-当前主实验正式结果覆盖 ETTh1/ETTm1。ECL 已完成 h96 高维快速验证（321 变量、smoke 样本、Informer/PatchTST），用于确认高维流程可运行；ECL 正式全量实验尚未进行。
+当前主实验正式结果覆盖 ETTh1/ETTm1，共 50 组完整矩阵实验；ECL 不再作为本项目报告的必需数据集。

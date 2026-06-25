@@ -1,296 +1,281 @@
-# 基于 LSTM 与 Transformer 变体的长时序预测实验研究
+# 基于 LSTM、Transformer 及其高效变体的长时序预测模型比较研究
 
-作者：待补充  
-单位：待补充
+作者：涂家俊
+单位：合肥工业大学计算机与信息学院，合肥 230601
+日期：2026 年 6 月
 
 ## 摘要
 
-长时序预测需要在较长历史窗口内识别趋势、周期和局部波动，并在多步预测中控制误差累积。针对这一问题，本文基于统一的数据预处理、训练和评估框架，对 LSTM、标准 Transformer、Informer、Autoformer 与 PatchTST 五类模型进行对比实验。实验使用 ETTh1 与 ETTm1 两个电力变压器温度数据集，统一采用 96 步回看窗口，并设置 24、48、96、168 和 336 五个预测步长。核心实验共完成 50 组正式训练，主要评价指标包括 MSE、MAE 和 R2，并补充统计 MAPE 与目标列 MAPE；同时围绕 Autoformer 的序列分解与自相关机制、PatchTST 的 patching 与通道独立建模设计 16 组消融实验。结果表明，PatchTST 在 ETTh1 的五个预测步长上均取得最低 MSE，Autoformer 在 ETTm1 的五个预测步长上均取得最低 MSE。跨数据集和步长平均后，PatchTST 的 MSE 最低，为 0.469335，Autoformer 次之，为 0.514711。消融结果进一步显示，移除 PatchTST 的通道独立建模会使平均 MSE 上升 162.25%，移除 Autoformer 的序列分解模块会使平均 MSE 上升 81.48%。这些结果说明，面向长时序预测的结构设计需要同时关注局部片段建模、变量间干扰控制以及趋势和周期分解。本文的结论限定于当前轻量实现、单随机种子和 ETTh1/ETTm1 两个数据集范围。
+长时序预测需要利用较长历史窗口对未来多个时间步进行连续预测，在能源负荷、交通流量、工业监测和气象分析等场景中具有重要应用价值。随着预测步长增加，模型不仅要捕捉局部趋势和周期变化，还需要面对长期依赖建模、误差累积和计算开销增大的问题。本文围绕 ETTh1 与 ETTm1 两个公开电力变压器温度数据集，比较 LSTM、Transformer、Informer、Autoformer 与 PatchTST 五类模型在多步预测任务中的表现。实验统一采用 96 步回看窗口，并设置 24、48、96、168、336 五种预测步长；评价指标包括 MSE、MAE、R² 与 MAPE，其中 MSE、MAE 和 R² 作为主要分析指标，MAPE 作为补充参考。本文以验证集最优配置重训得到的 v2 完整矩阵作为主实验结果，并进一步结合 v4 消融实验、完整单变量/多变量对比实验以及纯模型 forward 推理时间 benchmark，分析不同结构设计对预测精度、输入变量利用能力和计算效率的影响。实验结果表明，PatchTST 在 10 个数据集—预测步长任务中获得 9 次最低 MSE，整体性能最优；Autoformer 在部分高频序列任务上仍具有竞争力。消融结果显示，Autoformer 的序列分解模块和 PatchTST 的通道独立建模对性能贡献明显。单变量/多变量对比进一步说明，额外变量并不总能稳定改善目标列预测，能否抑制变量间噪声取决于模型结构。复杂度分析表明，PatchTST 在预测精度和纯 forward 推理效率之间表现出较好的平衡。
 
-**关键词**：长时序预测；LSTM；Transformer；Informer；Autoformer；PatchTST；消融实验
+**关键词**：长时序预测；Transformer；PatchTST；Autoformer；消融实验；多变量预测
 
 ## 1 引言
 
-时间序列预测广泛存在于电力负荷、交通流量、工业监测和气象分析等任务中。与短期预测相比，长时序预测需要模型在更长的预测窗口内保持对趋势变化、周期结构和局部扰动的识别能力。随着预测步长增加，模型误差往往会逐步累积，预测曲线也更容易出现相位偏移、过度平滑或远期细节丢失。因此，长时序预测不仅要求模型具备序列建模能力，还要求模型能够在计算效率和长期依赖建模之间取得平衡。
+时间序列预测是机器学习与数据挖掘中的经典任务，目标是根据历史观测推断未来变化趋势。与单步预测相比，多步长时序预测更接近真实应用场景：在电力系统中，需要提前预测设备温度或负荷变化；在交通系统中，需要估计未来一段时间的流量波动；在工业监测中，则需要识别潜在异常趋势并提前安排维护。这类任务通常具有明显的周期性、趋势性和局部突变，并且预测步长越长，模型越容易受到未来不确定性和误差累积的影响。
 
-传统循环神经网络能够按时间顺序处理历史观测，其中 LSTM 通过门控结构缓解普通 RNN 的梯度衰减问题。然而，当预测窗口较长时，循环结构的并行效率和长距离信息保留能力仍受到限制。Transformer 通过自注意力机制直接建模任意时间步之间的依赖关系，提升了并行能力和全局依赖表达能力，但标准自注意力的计算复杂度随序列长度二次增长，直接用于长时序预测时会带来计算开销和泛化退化问题。
+传统循环神经网络能够顺序处理时间依赖，其中 LSTM 通过门控机制缓解普通 RNN 的梯度消失问题，在早期时序建模任务中应用广泛。然而，RNN 类模型的计算过程天然依赖时间步递推，并行能力有限；当输入窗口较长或预测步长较大时，模型可能难以稳定保留长距离信息。Transformer 通过自注意力机制增强了任意时间步之间的依赖建模能力，并具备更好的并行计算特性，但标准自注意力的计算复杂度随序列长度二次增长，直接用于长时序预测时可能带来较高计算开销，同时也未必能自动适配时间序列中的趋势和周期结构。
 
-为缓解上述问题，近年来出现了多种面向长时序预测的 Transformer 变体。Informer 通过 ProbSparse Attention 和序列蒸馏降低长序列注意力计算成本；Autoformer 将时间序列分解为趋势项和季节项，并用 Auto-Correlation 捕捉周期依赖；PatchTST 则将连续时间点切分为 patch，并采用通道独立建模减少多变量间的干扰。已有研究表明，这些结构能够在不同数据集上改善长期预测表现，但在一个统一轻量实验框架下，它们相对于 LSTM 和标准 Transformer 的差异、误差随步长变化的规律以及关键模块的贡献仍需要结合项目实验进行验证。
+近年来，面向长时序预测的高效 Transformer 变体不断出现。Informer 通过 ProbSparse 注意力降低长序列注意力计算成本；Autoformer 引入序列分解和 Auto-Correlation 机制，将趋势项与季节项显式拆分；PatchTST 则将时间序列划分为 patch，并采用通道独立建模来降低变量间噪声干扰。这些方法从注意力稀疏化、周期结构建模和局部片段建模等不同角度改进了标准 Transformer，但在统一实验条件下，不同结构究竟如何影响预测精度和计算效率，仍需要通过系统实验加以比较。
 
-本文围绕以下问题展开研究：第一，在统一训练设置下，LSTM、Transformer 及三种高效 Transformer 变体在长时序预测中表现如何；第二，预测步长从 24 增加到 336 时，不同模型的误差如何变化；第三，Autoformer 的序列分解和 Auto-Correlation、PatchTST 的 patching 和通道独立建模是否真正贡献了性能提升；第四，模型预测精度、参数量和训练耗时之间是否存在可观察的权衡关系。
-
-本文的贡献主要包括三点。首先，完成 ETTh1 与 ETTm1 上 2 个数据集、5 个预测步长、5 个模型的统一对比实验，形成 50 组正式结果。其次，围绕 Autoformer 和 PatchTST 的核心结构完成 16 组消融实验，定量分析关键模块对预测性能的影响。最后，结合指标趋势、复杂度图、预测曲线和残差图，对长期预测中的误差累积、季节波动拟合和模型适用边界进行讨论。
+本文围绕 ETTh1 与 ETTm1 两个 ETT 数据集开展实验，使用统一的数据划分、输入窗口、预测步长和评价指标比较 LSTM、Transformer、Informer、Autoformer 与 PatchTST 五种模型。本文的主要工作包括：（1）实现并比较 RNN 基线、标准 Transformer 及三类高效长时序 Transformer 变体；（2）基于验证集最优配置完成 2 个数据集、5 个预测步长、5 个模型共 50 组正式主实验；（3）通过调参前后对比、Autoformer/PatchTST 消融实验和单变量/多变量对比实验分析模型结构差异；（4）补充参数量、训练时间和纯模型 forward 推理时间，讨论预测性能与计算成本之间的权衡。
 
 ## 2 相关工作
 
-### 2.1 循环神经网络与标准 Transformer
+### 2.1 RNN 类时序预测模型
 
-LSTM 是长短期记忆网络的经典结构，通过输入门、遗忘门和输出门控制历史状态的保留与更新。在时间序列预测任务中，LSTM 常被用作稳定基线，因为它能够显式处理序列顺序，并在中短期依赖建模中具有较好的可解释性。然而，LSTM 的递归计算使其并行效率受限，且在较长预测步长下容易出现误差累积。
+RNN 通过隐藏状态在时间维度上传递历史信息，适合处理顺序数据。LSTM 在 RNN 基础上引入输入门、遗忘门和输出门，使模型能够在一定程度上选择保留或遗忘历史信息，从而缓解梯度消失和长期依赖建模困难。对于中短期预测任务，LSTM 往往能够形成稳定的基线表现；但在长时序预测中，模型需要同时处理较长输入窗口和较长输出序列，递推式结构的并行效率不足，并且远期预测容易受到历史信息压缩和误差累积影响。因此，本文将 LSTM 作为 RNN 基线，用于衡量传统序列模型在统一任务设置下的性能下限。
 
-Transformer 以自注意力机制替代递归结构，使模型能够并行处理序列并直接捕捉长距离依赖。对于长度为 L 的序列，标准自注意力需要计算 L 乘 L 的注意力矩阵，因此当输入序列较长或模型层数增加时，计算和内存成本都会显著上升。在本项目中，标准 Transformer 作为强基线，用于衡量直接使用自注意力结构进行长时序预测的表现。
+### 2.2 Transformer 与自注意力机制
 
-### 2.2 长时序预测 Transformer 变体
+Transformer 使用自注意力机制直接建模任意位置之间的依赖关系，相比循环结构具有更强的并行计算能力。对于时间序列数据，自注意力可以在理论上捕捉远距离依赖，有助于处理长输入窗口。然而，标准自注意力的计算和存储复杂度通常为 \(O(L^2)\)，其中 \(L\) 为序列长度。当输入序列变长时，计算成本会迅速增加。此外，原始 Transformer 主要面向自然语言序列设计，并未显式建模时间序列常见的趋势、周期和多尺度局部模式。因此，直接将标准 Transformer 用于长时序预测，既可能面临效率问题，也可能在预测精度上弱于针对时序结构设计的专门模型。本文使用标准 Transformer 作为注意力机制基线，与后续高效变体进行比较。
 
-Informer 针对长序列预测中的注意力开销提出 ProbSparse Attention。其核心思想是只对少数重要 query 计算完整注意力，其余位置使用近似表示，从而将注意力计算从二次复杂度降低到近似 O(L log L)。Informer 还引入 self-attention distilling 压缩中间序列长度，并使用一次性生成式解码器输出完整预测窗口。
+### 2.3 高效长时序预测模型
 
-Autoformer 从时间序列的趋势性和周期性出发，引入序列分解模块，将输入拆分为趋势项和季节项，再通过 Auto-Correlation 机制寻找周期延迟并聚合相似子序列。与逐点注意力相比，Auto-Correlation 更强调序列级周期结构，因此适合存在明显周期或季节模式的数据。
+Informer 针对长序列预测中注意力计算成本过高的问题提出 ProbSparse 注意力，通过选择更有代表性的 query 减少无效注意力计算，并使用生成式解码方式一次性输出未来序列。Autoformer 则从时间序列结构出发，引入 series decomposition 将序列分为趋势项和季节项，并使用 Auto-Correlation 机制捕捉周期依赖，使模型更适合具有明显周期性的序列。PatchTST 的核心思想是将连续时间点划分为 patch，使模型在局部片段层面建模，同时采用 channel independence 将不同变量分别处理，减少多变量之间潜在噪声干扰。本文选择 Informer、Autoformer 和 PatchTST，是因为它们分别代表了注意力稀疏化、序列分解和 patch 化建模三类具有代表性的长时序预测思路。
 
-PatchTST 借鉴视觉 Transformer 中 patch 的思想，将连续时间点切分为局部片段后再输入 Transformer。这样既减少 token 数量，也提高每个 token 的局部语义密度。同时，PatchTST 采用通道独立策略，即对每个变量分别建模并共享参数，避免不同变量分布差异导致的干扰。本文的消融实验重点检验 patching 和通道独立建模在当前数据集上的贡献。
-
-## 3 方法
+## 3 方法与实验设计
 
 ### 3.1 任务定义
 
-设多变量时间序列为 \(X = \{x_1, x_2, ..., x_T\}\)，其中每个时间步 \(x_t \in \mathbb{R}^{C}\)，C 为变量数。给定长度为 L 的历史窗口 \(X_{t-L+1:t}\)，模型需要预测未来 H 个时间步：
+设多变量时间序列为 \(X=\{x_1,x_2,\ldots,x_T\}\)，其中每个时间步 \(x_t \in \mathbb{R}^{C}\)，\(C\) 为变量数。给定长度为 \(L\) 的历史窗口 \(X_{t-L+1:t}\)，模型需要预测未来 \(H\) 个时间步：
 
 \[
-\hat{Y}_{t+1:t+H} = f(X_{t-L+1:t})
+\hat{Y}_{t+1:t+H}=f_{\theta}(X_{t-L+1:t})
 \]
 
-本文统一设置回看窗口 \(L=96\)，预测步长 \(H \in \{24, 48, 96, 168, 336\}\)。所有模型输出形状统一为 `(batch, horizon, features)`，从而保证训练、评估和可视化流程一致。
+本文统一设置回看窗口 \(L=96\)，预测步长 \(H \in \{24,48,96,168,336\}\)。ETT 数据集中每个样本包含 7 个变量，因此多变量预测输入维度为 7。单变量实验中仅输入目标列并预测目标列；多变量实验中保留全部变量输入和输出，但比较时仍以目标列指标作为重点。
 
-### 3.2 模型设置
+### 3.2 数据集与预处理
 
-本文比较五类模型：
+本文使用 ETTh1 和 ETTm1 两个公开 ETT 数据集。ETTh1 为小时级采样数据，ETTm1 为 15 分钟级采样数据，二者均包含电力变压器相关变量，适合观察不同时间频率下的长步长预测表现。数据预处理遵循时间序列预测的基本要求：按照时间顺序划分训练集、验证集和测试集，避免未来信息泄露；使用训练集统计量进行标准化，并将相同变换应用于验证集和测试集；通过滑动窗口构造输入—输出样本，使所有模型在相同历史窗口和相同预测步长下训练与评估。
 
-| 模型 | 主要机制 | 在本文中的角色 |
-| --- | --- | --- |
-| LSTM | 门控循环结构 | RNN 基线 |
-| Transformer | 标准多头自注意力 | 标准注意力基线 |
-| Informer | ProbSparse Attention 与序列蒸馏 | 高效注意力变体 |
-| Autoformer | 序列分解与 Auto-Correlation | 趋势和周期建模变体 |
-| PatchTST | Patching 与通道独立建模 | 局部片段和变量独立变体 |
+### 3.3 模型设置
 
-所有模型均使用项目中的统一训练框架。LSTM 和 Transformer 用于提供基础对照，Informer、Autoformer 和 PatchTST 用于验证面向长时序预测的结构改进是否带来实际收益。
+本文比较五类模型。为了让模型选择逻辑更清楚，表 1 先给出各模型在本文实验中的定位。LSTM 和 Transformer 分别作为 RNN 基线与标准注意力基线，Informer、Autoformer 和 PatchTST 则代表三类面向长时序预测的高效结构改进。
 
-### 3.3 消融设计
-
-为分析关键模块贡献，本文围绕 Autoformer 和 PatchTST 设计四个消融变体：
-
-| 消融模型 | 对应原模型 | 被检验模块 | 消融方式 |
+| 模型 | 本文定位 | 关键思想 | 主要观察目的 |
 | --- | --- | --- | --- |
-| `autoformer_no_decomp` | Autoformer | Series Decomposition | 关闭分解，趋势分支置零 |
-| `autoformer_no_autocorr` | Autoformer | Auto-Correlation | 替换为标准多头自注意力 |
-| `patchtst_no_patch` | PatchTST | Patching | 使用逐时间点线性投影替代 patch embedding |
-| `patchtst_channel_mix` | PatchTST | Channel Independence | 混合多变量输入，取消通道独立建模 |
+| LSTM | RNN 基线 | 门控循环结构 | 检验传统序列模型在长步长预测中的下限表现 |
+| Transformer | 标准注意力基线 | 全局自注意力 | 观察未专门适配时序结构的注意力模型表现 |
+| Informer | 稀疏注意力变体 | ProbSparse attention | 分析降低长序列注意力开销后的预测表现 |
+| Autoformer | 分解式长时序模型 | Series decomposition 与 Auto-Correlation | 验证趋势/季节分解对周期序列的作用 |
+| PatchTST | Patch 化长时序模型 | Patching 与 channel independence | 分析局部片段建模和通道独立建模的效果 |
 
-消融实验覆盖 ETTh1、ETTm1 两个数据集，以及 h96 和 h336 两个代表性预测步长，共 16 组正式实验。
+为了保证比较公平，五个模型共享同一套数据接口、训练框架和评价指标。调参后的结构配置来自 ETTh1 h96 验证集最优实验，主要参数记录见 `docs/best_model_params.md`。表 2 列出本文 v2 主实验采用的模型结构参数；除特别说明外，各模型均使用 `dropout=0.1`。
 
-## 4 实验设置
-
-### 4.1 数据集
-
-实验使用 ETTh1 和 ETTm1 两个公开电力变压器温度数据集作为主结果来源。当前完整正式结果矩阵覆盖 ETTh1 和 ETTm1；其他公开数据集不纳入本文正式实验口径。
-
-| 数据集 | 变量数 | 频率 | 切分方式 | 说明 |
-| --- | ---: | --- | --- | --- |
-| ETTh1 | 7 | 小时 | 前 12 月 / 4 月 / 4 月 | 小时级电力变压器温度数据 |
-| ETTm1 | 7 | 15 分钟 | 前 12 月 / 4 月 / 4 月 | 15 分钟级电力变压器温度数据 |
-
-数据按时间顺序划分训练集、验证集和测试集，避免未来信息泄露。标准化参数仅由训练集统计量得到，并应用于验证集和测试集。
-
-### 4.2 训练与评价
-
-正式核心实验配置如下：
-
-| 配置项 | 取值 |
+| 模型 | 结构参数 |
 | --- | --- |
-| 回看窗口 | 96 |
-| 预测步长 | 24、48、96、168、336 |
-| 训练轮数上限 | 20 |
-| early stopping patience | 5 |
-| batch size | 32 |
-| learning rate | 0.001 |
-| weight decay | 0.00001 |
-| 随机种子 | 42 |
-| 正式 run tag | `formal_seed42` |
-| 消融 run tag | `ablation_seed42` |
-| 评价指标 | MSE、MAE、R2；补充 MAPE、MAPE_target |
+| LSTM | `hidden_size=256`, `num_layers=1` |
+| Transformer | `d_model=128`, `nhead=4`, `num_layers=2`, `dim_feedforward=128` |
+| Informer | `d_model=64`, `n_heads=4`, `n_encoder_layers=2`, `n_decoder_layers=2`, `d_ff=256`, `factor=3` |
+| Autoformer | `d_model=64`, `n_heads=4`, `n_encoder_layers=2`, `n_decoder_layers=1`, `d_ff=128`, `factor=3`, `kernel_size=25` |
+| PatchTST | `d_model=64`, `n_heads=8`, `n_layers=2`, `d_ff=128`, `patch_len=32`, `stride=8` |
 
-实验结果来自 `results/v1_csv/formal/formal_seed42_all.csv` 和 `results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`。MAPE 补充表来自 `results/v1_csv/formal/formal_seed42_mape.csv` 和 `results/v1_csv/formal/formal_seed42_mape_by_model.csv`。预测曲线和残差图由已有 checkpoint 对测试集首批样本推理得到，不重新训练模型。
+### 3.4 训练与调参设置
 
-MAPE 表示平均绝对百分比误差，形式为 \(\frac{100\%}{n}\sum|\frac{y-\hat{y}}{y}|\)。该指标便于用百分比理解预测误差，但对真实值接近零的样本非常敏感。由于本文指标基于标准化后的序列计算，部分变量会在零附近波动，导致全变量 MAPE 明显放大。因此本文仍以 MSE、MAE 和 R2 作为主指标，MAPE 仅作为补充参考；其中 `MAPE_target` 比全变量 MAPE 更适合辅助观察目标列预测误差。
+本文结果按版本组织。为避免读者混淆不同实验批次的用途，表 3 先说明本文涉及的主要结果版本。简言之，v1 用作未调参基线，v2 是正式主实验结果，v3 是单变量/多变量对比的阶段性验证，v4 则补齐消融实验和完整单变量/多变量分析。
 
-为补充分析输入变量范围对目标列预测的影响，本文新增单变量与多变量对比实验。单变量口径只输入目标列并只预测目标列；多变量口径保留全部变量输入和输出，并用目标列指标进行公平比较。代表性实验覆盖 ETTh1、ETTm1 的 h96 和 h336，以及 LSTM、Transformer、Autoformer、PatchTST 四个模型。考虑到该对比主要用于观察输入口径差异，当前版本使用 `sample_limit=512` 和最多 5 个 epoch 的快速配置，结果文件见 `results/univariate_multivariate_csv/feature_mode/feature_mode_seed42_comparison.csv` 和 `results/univariate_multivariate_csv/feature_mode/feature_mode_seed42_comparison_delta.csv`；全量正式对比可将 `configs/univariate_multivariate_comparison.json` 中的 `sample_limit` 改为 0 后重跑。
+| 版本 | 运行标签 | 数据范围 | 实验目的 | 本文用途 |
+| --- | --- | --- | --- | --- |
+| v1 | `formal_seed42` | ETTh1、ETTm1 × 5 步长 × 5 模型，共 50 组 | 使用未调参初始配置建立基线 | 只用于和 v2 比较调参前后变化 |
+| v2 | `full_val_best_e50p10_tb_seed42` | ETTh1、ETTm1 × 5 步长 × 5 模型，共 50 组 | 使用验证集最优配置重新训练完整矩阵 | 作为本文五模型性能比较的主结果 |
+| v3 | `feature_mode_full_seed42` | ETTh1、ETTm1 × h96/h336 × 5 模型 × 2 输入模式，共 40 组 | 阶段性验证单变量/多变量实验流程 | 作为方法验证和历史归档，不作为正文主要结论来源 |
+| v4 消融 | `ablation_rerun_seed42` | ETTh1、ETTm1 × h96/h336 × Autoformer/PatchTST 基线与消融变体，共 24 组 | 验证关键结构组件有效性 | 用于分析序列分解、通道独立等模块贡献 |
+| v4 单/多变量 | `feature_mode_full_seed42` | ETTh1、ETTm1 × 5 步长 × 5 模型 × 2 输入模式，共 100 组 | 比较单变量和多变量输入对目标列预测的影响 | 用于分析额外变量是否稳定带来收益 |
 
-## 5 实验结果与分析
+v2 主实验统一使用 seed=42、batch size=128、最大训练轮数 50、early stopping patience=10。不同模型的学习率和权重衰减采用验证集调优结果，具体训练参数见表 4。测试集仅用于最终评估，不参与超参数选择。这样的设置避免了用测试集挑选模型带来的结果偏乐观问题，也使 v2 相比早期 v1 基线更适合作为最终性能比较口径。
 
-### 5.1 核心指标趋势
+| 模型 | epochs | patience | batch size | learning rate | weight decay | seed |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| LSTM | 50 | 10 | 128 | 0.001 | 0.0 | 42 |
+| Transformer | 50 | 10 | 128 | 0.0001 | 0.0 | 42 |
+| Informer | 50 | 10 | 128 | 0.001 | 0.00001 | 42 |
+| Autoformer | 50 | 10 | 128 | 0.001 | 0.00001 | 42 |
+| PatchTST | 50 | 10 | 128 | 0.001 | 0.00001 | 42 |
 
-图 1 展示了五类模型在 ETTh1 和 ETTm1 上随预测步长变化的 MSE、MAE 和 R2 趋势。总体上，随着预测步长从 24 增加到 336，模型误差普遍升高，R2 整体下降，说明长期预测中的误差累积是稳定存在的现象。
+### 3.5 评价指标与复杂度指标
 
-![核心指标趋势](../../results/figures/formal_metric_trends.png)
+预测性能主要使用 MSE、MAE 和 R² 评价。MSE 对大误差更敏感，适合作为主排序指标；MAE 更直观地反映平均绝对偏差；R² 衡量模型相对均值预测基线的解释能力。MAPE 作为补充指标，但由于标准化后的时间序列中可能出现接近零的值，百分比误差容易被放大，因此本文不将 MAPE 作为唯一排序依据。
 
-**图 1：核心实验指标趋势。** 图中比较了 5 个模型在 2 个数据集和 5 个预测步长上的 MSE、MAE 与 R2。
+复杂度分析包含三类指标：模型参数量、训练时间和纯 forward 推理时间。参数量反映模型规模，训练时间反映训练成本，推理时间反映模型部署时单次前向计算成本。推理时间 benchmark 只测 `torch.inference_mode()` 下的 `model(x)`，不包含 DataLoader、数据搬运、反归一化、指标计算或结果保存时间。该 benchmark 在本机 Apple MPS 上完成，因此不能与 CUDA 训练时间直接混为同一硬件口径，只用于比较相同本机环境下的模型 forward 开销。
 
-### 5.2 不同数据集上的最优模型
+## 4 实验结果与分析
 
-ETTh1 上 PatchTST 在所有预测步长中均取得最低 MSE。其 h24、h48、h96、h168 和 h336 的 MSE 分别为 0.380213、0.420251、0.483175、0.513911 和 0.594367。虽然 MSE 随预测步长增加而上升，但 PatchTST 始终保持相对优势，说明 patch 化输入与通道独立建模对小时级 ETT 数据较为有效。
+### 4.1 五模型主实验结果
 
-ETTm1 上 Autoformer 在所有预测步长中均取得最低 MSE。其 h24、h48、h96、h168 和 h336 的 MSE 分别为 0.307059、0.447473、0.460524、0.508573 和 0.554604。ETTm1 频率更高、样本量更大，Autoformer 的序列分解和周期建模可能更容易捕捉 15 分钟级数据中的局部周期和趋势变化。
+v2 主实验结果显示，PatchTST 在整体平均 MSE 上表现最好。跨 ETTh1、ETTm1 和五个预测步长取平均后，PatchTST 的平均 MSE 为 0.462621，Autoformer 为 0.501605，Transformer 为 0.821683，Informer 为 0.890119，LSTM 为 0.987132。目标列指标也呈现类似趋势：PatchTST 的平均 `MSE_target` 为 0.077168，Autoformer 为 0.094870，明显优于其余模型。按 10 个数据集—预测步长任务统计，PatchTST 获得 9 次最低 MSE，Autoformer 获得 1 次最低 MSE。
 
-| 数据集 | 预测步长 | 最优模型 | MSE | MAE | R2 |
-| --- | ---: | --- | ---: | ---: | ---: |
-| ETTh1 | 24 | PatchTST | 0.380213 | 0.411152 | 0.702517 |
-| ETTh1 | 48 | PatchTST | 0.420251 | 0.432552 | 0.670760 |
-| ETTh1 | 96 | PatchTST | 0.483175 | 0.472237 | 0.621377 |
-| ETTh1 | 168 | PatchTST | 0.513911 | 0.489040 | 0.597451 |
-| ETTh1 | 336 | PatchTST | 0.594367 | 0.545011 | 0.532757 |
-| ETTm1 | 24 | Autoformer | 0.307059 | 0.351648 | 0.758935 |
-| ETTm1 | 48 | Autoformer | 0.447473 | 0.439475 | 0.648585 |
-| ETTm1 | 96 | Autoformer | 0.460524 | 0.452287 | 0.637520 |
-| ETTm1 | 168 | Autoformer | 0.508573 | 0.480255 | 0.599255 |
-| ETTm1 | 336 | Autoformer | 0.554604 | 0.507802 | 0.562683 |
+表 5 汇总了 v2 主实验中五个模型跨 10 个任务的平均表现。可以看到，PatchTST 在 MSE、MAE、R² 和目标列 MSE 上均排名最优，Autoformer 排名第二；LSTM 参数量最高，但误差也最高，说明模型规模并不能直接转化为预测性能。
 
-![各预测步长最优模型](../../results/figures/formal_best_model_by_horizon.png)
+| 模型 | 平均 MSE | 平均 MAE | 平均 R² | 目标列 MSE | 平均参数量 | 平均训练时间/s |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| PatchTST | 0.4626 | 0.4497 | 0.6366 | 0.0772 | 113037 | 58.7 |
+| Autoformer | 0.5016 | 0.4779 | 0.6061 | 0.0949 | 110689 | 88.3 |
+| Transformer | 0.8217 | 0.6740 | 0.3547 | 0.3736 | 338067 | 82.6 |
+| Informer | 0.8901 | 0.6860 | 0.3010 | 0.5254 | 192884 | 67.1 |
+| LSTM | 0.9871 | 0.6998 | 0.2249 | 0.2651 | 578938 | 41.1 |
 
-**图 2：各数据集和预测步长的最优模型。** ETTh1 的最优模型均为 PatchTST，ETTm1 的最优模型均为 Autoformer。
+![v2 五模型平均指标](../../archive/v2_results/experiments/validation_best_full_matrix/figures/v2_model_average_metrics.png)
 
-### 5.3 模型平均表现与复杂度权衡
+从预测步长趋势看，随着 horizon 从 24 增加到 336，多数模型误差上升、R² 下降，说明长步长预测确实存在更明显的不确定性和误差累积。PatchTST 在多数任务上保持最低误差，可能与其 patch 化输入方式有关：连续时间点被组织成局部片段后，模型能在较短 token 序列上捕捉局部形态，同时保留长窗口中的整体变化。Autoformer 的表现也较稳定，说明序列分解对于 ETT 这类具有趋势和周期结构的数据有实际作用。
 
-跨 2 个数据集和 5 个预测步长取平均后，PatchTST 的平均 MSE 最低，为 0.469335；Autoformer 次之，为 0.514711。Informer、Transformer 和 LSTM 的平均 MSE 分别为 0.817005、0.917335 和 0.946142，明显弱于 PatchTST 和 Autoformer。标准 Transformer 的平均参数量最高，但性能并未优于面向时序结构设计的变体，说明直接套用标准注意力结构并不能充分适应当前长时序预测任务。
+![v2 不同预测步长趋势](../../archive/v2_results/experiments/validation_best_full_matrix/figures/v2_horizon_trends.png)
 
-| 模型 | 平均 MSE | 平均 MAE | 平均 R2 | 平均参数量 | 平均训练时间(s) |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| PatchTST | 0.469335 | 0.451390 | 0.631359 | 112140.8 | 197.319 |
-| Autoformer | 0.514711 | 0.485138 | 0.595797 | 110688.6 | 263.691 |
-| Informer | 0.817005 | 0.644982 | 0.358376 | 110131.8 | 299.006 |
-| Transformer | 0.917335 | 0.691747 | 0.279686 | 132768.0 | 225.111 |
-| LSTM | 0.946142 | 0.702745 | 0.257014 | 117280.0 | 128.940 |
+![v2 任务胜出次数](../../archive/v2_results/experiments/validation_best_full_matrix/figures/v2_winner_counts.png)
 
-![复杂度对比](../../results/figures/formal_complexity_tradeoff.png)
+LSTM 与标准 Transformer 的表现整体弱于 Autoformer 和 PatchTST。LSTM 的平均参数量较高，但平均 MSE 最高，说明仅增加循环结构规模不能充分解决长步长预测问题。标准 Transformer 虽然具备全局注意力建模能力，但没有显式处理时序趋势、周期和多变量干扰，因此在本实验中未能超过面向长时序设计的模型。
 
-**图 3：模型复杂度与性能权衡。** PatchTST 在平均误差和训练耗时之间取得较好平衡；LSTM 训练较快但误差较高。
+### 4.2 调参前后对比
 
-### 5.4 MAPE 补充分析
+v1 未调参基线用于观察初始配置下模型表现，v2 则使用验证集最优配置重训。对比结果显示，Transformer 调参收益最明显，平均 MSE 从 0.917 降至 0.822，约下降 10.4%；Autoformer 从 0.515 降至 0.502，约下降 2.5%；PatchTST 从 0.469 降至 0.463，约下降 1.4%。这说明验证集调参对不同模型的影响并不一致：结构本身已经较适配任务的模型提升空间较小，而对超参数更敏感的模型则可能明显受益。
 
-按 2 个数据集和 5 个预测步长平均后，目标列 MAPE 与主指标 MSE 的总体趋势基本一致：PatchTST 的平均 `MAPE_target` 最低，为 23.47%，Autoformer 次之，为 24.99%。全变量 MAPE 的绝对值明显偏大，说明标准化序列中接近零的分母会放大百分比误差，因此不宜将其作为主排序依据。
+表 6 进一步给出 v1 与 v2 的平均 MSE 对比。变化率按 \((v2-v1)/v1\) 计算，因此负值表示调参后误差下降，正值表示调参后平均误差上升。
 
-| 模型 | 平均 MAPE | 平均 MAPE_target |
-| --- | ---: | ---: |
-| PatchTST | 528.14 | 23.47 |
-| Autoformer | 575.55 | 24.99 |
-| LSTM | 811.56 | 45.47 |
-| Informer | 690.98 | 50.51 |
-| Transformer | 748.34 | 52.64 |
-
-从数据集内部看，ETTh1 上 PatchTST 的平均 `MAPE_target` 为 27.67%，优于 Autoformer 的 30.18%；ETTm1 上 PatchTST 的平均 `MAPE_target` 为 19.27%，略低于 Autoformer 的 19.80%。不过 ETTm1 的主指标 MSE、MAE 和 R2 仍由 Autoformer 占优，因此本文不因单一 MAPE 补充指标改变主结论。
-
-### 5.5 预测曲线与残差分析
-
-预测曲线进一步展示了模型在具体样本上的行为。ETTh1 h96 的 PatchTST 能够捕捉目标序列的主要波动趋势，但在局部突变处存在平滑化倾向。ETTh1 h336 中，这种现象更明显，模型倾向于输出较平滑的远期趋势，对远期细节变化的拟合能力减弱。
-
-![ETTh1 h96 PatchTST 预测曲线](../../results/figures/prediction_ETTh1_h96_patchtst.png)
-
-**图 4：ETTh1 h96 PatchTST 预测曲线。** 模型能够拟合主要趋势，但局部突变处仍存在偏差。
-
-![ETTh1 h336 PatchTST 残差](../../results/figures/residual_ETTh1_h336_patchtst.png)
-
-**图 5：ETTh1 h336 PatchTST 残差。** 长预测窗口下残差更容易出现持续偏正或偏负，体现出误差累积和相位偏移。
-
-ETTm1 上 Autoformer 表现最优。h96 预测曲线显示其能够较好跟随高频数据中的周期波动；但在 h336 上，残差仍会随预测窗口拉长而扩大。这说明序列分解能够提升高频数据上的整体性能，但不能完全消除远期预测中的不确定性。
-
-![ETTm1 h96 Autoformer 预测曲线](../../results/figures/prediction_ETTm1_h96_autoformer.png)
-
-**图 6：ETTm1 h96 Autoformer 预测曲线。** Autoformer 对高频数据的主要周期变化有较好拟合。
-
-![ETTm1 h336 Autoformer 残差](../../results/figures/residual_ETTm1_h336_autoformer.png)
-
-**图 7：ETTm1 h336 Autoformer 残差。** 即使在最优模型上，长步长预测仍存在远期误差扩大的问题。
-
-## 6 消融实验
-
-消融实验结果表明，PatchTST 的通道独立建模和 Autoformer 的序列分解模块是当前实验中贡献最显著的结构。将 PatchTST 改为通道混合后，平均 MSE 上升 162.25%，平均 R2 下降 0.664538；移除 Autoformer 的序列分解后，平均 MSE 上升 81.48%，平均 R2 下降 0.386341。
-
-| 消融项 | 平均 MSE 变化 | 平均 MSE 变化率 | 平均 R2 变化 |
+| 模型 | v1 平均 MSE | v2 平均 MSE | MSE 变化率/% |
 | --- | ---: | ---: | ---: |
-| 移除 PatchTST 通道独立建模 | +0.845824 | +162.25% | -0.664538 |
-| 移除 Autoformer 序列分解 | +0.491294 | +81.48% | -0.386341 |
-| 移除 PatchTST patching | +0.041929 | +8.54% | -0.032984 |
-| 将 Auto-Correlation 替换为标准注意力 | -0.022206 | -3.15% | +0.017405 |
+| PatchTST | 0.4693 | 0.4626 | -1.4 |
+| Autoformer | 0.5147 | 0.5016 | -2.5 |
+| Transformer | 0.9173 | 0.8217 | -10.4 |
+| Informer | 0.8170 | 0.8901 | 8.9 |
+| LSTM | 0.9461 | 0.9871 | 4.3 |
 
-![消融影响](../../results/figures/ablation_delta_mse_pct.png)
+![v2 与 v1 模型平均表现对比](../../archive/v2_results/experiments/validation_best_full_matrix/figures/v2_vs_v1_model_comparison.png)
 
-**图 8：消融实验的 MSE 变化率。** 通道独立建模和序列分解是最关键的性能来源。
+也需要看到，Informer 和 LSTM 在 v2 平均 MSE 上相对 v1 并未提升。该现象说明“验证集最优配置”并不必然带来所有测试任务的平均改善，尤其当调参依据来自特定数据集和特定步长时，配置迁移到其他数据集或预测步长后可能存在泛化差异。因此，本文将 v2 作为主结果，并不是因为它在每个模型上都优于 v1，而是因为 v2 的选择过程更规范：先由验证集确定配置，再统一在测试集上报告最终结果。
 
-PatchTST 的通道独立建模对性能影响最大。该结果说明，在当前 7 变量 ETT 数据中，直接混合多变量输入可能引入变量间分布差异和噪声干扰；相反，通道独立建模通过共享参数但分变量处理的方式保留了单变量模式。
+![v2 相对 v1 的逐任务变化热力图](../../archive/v2_results/experiments/validation_best_full_matrix/figures/v2_vs_v1_task_improvement_heatmap.png)
 
-Autoformer 的序列分解同样关键。移除分解后，模型需要直接在原始序列上学习趋势和周期结构，导致 h96 和 h336 上的误差均明显增加。这与 Autoformer 的设计动机一致，即长时序预测中的趋势和季节结构应被显式建模。
+### 4.3 消融实验
 
-Auto-Correlation 的消融结果较复杂。将其替换为标准注意力后，ETTm1 上 MSE 略有上升，但 ETTh1 上反而略有下降，使平均 MSE 变化为负。这一现象并不能证明 Auto-Correlation 无效，而更可能说明当前项目中的轻量 Autoformer 实现、训练轮数或超参数尚未完全发挥 Auto-Correlation 的优势。后续可围绕分解窗口、模型宽度、top-k lag 和训练时长继续调参。
+为分析关键结构的有效性，本文使用 v4 消融实验比较 Autoformer 和 PatchTST 的基线版本与结构变体。消融范围覆盖 ETTh1、ETTm1 的 h96 和 h336，每个模型包含同批次基线和对应消融变体。结果表明，Autoformer 去掉序列分解模块后，平均 MSE 增加 0.386531，平均相对上升约 66.2%，R² 平均下降 0.304086。这说明 series decomposition 对 Autoformer 的预测性能具有明显贡献，尤其在含有趋势和周期结构的 ETT 数据中，显式拆分趋势项和季节项能够降低模型直接学习复杂混合模式的难度。
 
-## 7 讨论
+表 7 汇总了四类消融变体相对同批次基线的平均变化。`mean_delta_MSE_pct` 为正表示移除或替换组件后 MSE 上升，即性能退化；为负则表示消融版本在当前实验平均值上略优。
 
-### 7.1 数据集差异
+| 基线模型 | 消融模型 | 平均 ΔMSE | 平均 ΔMSE/% | 平均 ΔR² |
+| --- | --- | ---: | ---: | ---: |
+| autoformer_ablation_base | autoformer_no_autocorr | -0.0207 | -3.1 | 0.0163 |
+| autoformer_ablation_base | autoformer_no_decomp | 0.3865 | 66.2 | -0.3041 |
+| patchtst_ablation_base | patchtst_channel_mix | 0.7212 | 139.2 | -0.5665 |
+| patchtst_ablation_base | patchtst_no_patch | 0.0388 | 7.7 | -0.0305 |
 
-ETTh1 与 ETTm1 的最优模型不同，说明长时序预测模型的适用性与数据频率、样本规模和周期结构有关。ETTh1 为小时级数据，PatchTST 的 patch 化输入能够较好保留局部片段模式，并减少注意力 token 数量。ETTm1 为 15 分钟级数据，样本更多、周期更密集，Autoformer 的趋势和季节分解更容易发挥作用。
+![v4 消融平均影响](../../archive/v4_results/experiments/ablation_study/figures/v4_ablation_mean_effects.png)
 
-### 7.2 长步长误差累积
+PatchTST 的消融结果同样明显。取消 channel independence 后，平均 MSE 增加 0.721228，平均相对上升约 139.2%，R² 平均下降 0.566507。这表明通道独立建模是 PatchTST 在当前实验中最关键的结构之一。对于多变量时间序列，不同变量之间并非总是提供有效互补信息，直接混合所有变量可能引入噪声；PatchTST 分通道建模后再共享预测结构，能够在保留单变量模式的同时减少变量间干扰。
 
-从 h24 到 h336，最优模型的 MSE 仍持续上升，说明长步长预测的误差累积不是单个模型结构即可完全解决的问题。预测曲线和残差图显示，模型对平滑周期变化拟合较好，但对突变、相位变化和远期细节更敏感。随着预测窗口变长，模型更倾向于输出平均化或平滑化趋势，这会降低远期局部波动的拟合质量。
+![v4 消融逐任务热力图](../../archive/v4_results/experiments/ablation_study/figures/v4_ablation_task_delta_heatmap.png)
 
-### 7.3 超参数与复现实验经验
+相比之下，将 Autoformer 的 Auto-Correlation 替换为标准注意力后，平均 MSE 变化为 -0.020742，即部分任务中消融版本反而略好。这一结果不能简单理解为 Auto-Correlation 无效，更可能与本文中的轻量实现、数据规模、训练预算和超参数选择有关。Auto-Correlation 的优势通常依赖更充分的周期性建模和合适的结构规模；在课程项目的轻量实现中，该模块可能尚未完全发挥原论文设定下的效果。因此，本文对该项消融采取谨慎解释：序列分解和通道独立的贡献非常明确，而 Auto-Correlation 的贡献还需要更系统的超参数与多随机种子实验验证。
 
-本项目使用统一的 96 步回看窗口，使不同模型在相同历史信息下比较。`epochs=20` 和 `patience=5` 在当前规模下能够较快得到可复现实验结果，但也可能限制部分模型的充分收敛。实验中使用 `run_tag` 区分 `formal_seed42`、`ablation_seed42` 和临时 smoke 结果，有助于避免结果覆盖和汇总混入。Windows 环境下还需要确认 CUDA Python 环境，避免误用 CPU 解释器造成训练时间异常。
+![v4 消融资源与性能权衡](../../archive/v4_results/experiments/ablation_study/figures/v4_ablation_resource_tradeoff.png)
 
-### 7.4 单变量与多变量对比
+### 4.4 单变量与多变量对比
 
-代表性小样本实验显示，在 16 个数据集-步长-模型组合中，有 15 个组合的单变量目标列 MSE 低于多变量口径。按模型平均，单变量相对于多变量的目标列 MSE 差值分别为 Transformer -2.7311、Autoformer -1.7311、LSTM -0.9642、PatchTST -0.6965；负值表示单变量更低。唯一例外是 ETTh1 h96 的 PatchTST，多变量目标列 MSE 为 0.4781，低于单变量的 0.7781。
+多变量预测通常被认为可以利用额外变量提供的信息，但额外变量也可能带来噪声和优化难度。v4 单变量/多变量完整对比覆盖 ETTh1、ETTm1、五个预测步长、五个模型和两种输入模式，共 100 组实验，并形成 50 个严格配对任务。结果显示，在目标列 MSE 上，单变量模式赢得 43 个配对任务，多变量模式赢得 7 个任务；这 7 次多变量优势全部来自 PatchTST。
 
-这一结果说明，在当前快速配置下，额外变量并不总能稳定提升目标列预测，尤其当训练轮数和样本量较小时，多变量输入可能增加优化难度或引入变量间噪声。PatchTST 在 ETTh1 h96 上从多变量输入受益，说明通道独立建模在部分场景下能够利用多变量历史信息而不显著放大干扰。不过该结论来自 `sample_limit=512` 的代表性实验，不能替代全量正式训练；更稳妥的结论需要用全量样本、多随机种子进一步验证。
+表 8 按模型统计了 10 个数据集—预测步长任务中单变量和多变量模式的胜出次数。除 PatchTST 外，其余四个模型均为单变量模式 10 次胜出；PatchTST 则有 7 次由多变量模式取得更低目标列 MSE。
 
-### 7.5 局限性
+| 模型 | 单变量胜出次数 | 多变量胜出次数 |
+| --- | ---: | ---: |
+| LSTM | 10 | 0 |
+| Transformer | 10 | 0 |
+| Informer | 10 | 0 |
+| Autoformer | 10 | 0 |
+| PatchTST | 3 | 7 |
+| **合计** | **43** | **7** |
 
-本文结果存在三个主要边界。第一，当前正式主实验只覆盖 ETTh1 和 ETTm1 两个 ETT 数据集，因此结论主要反映这两类频率设置下的相对趋势。第二，所有正式结果基于单随机种子 42，尚未报告多随机种子的均值和方差。第三，当前模型实现为课程项目中的轻量版本，与原论文完整配置可能存在差异，因此本文更适合说明统一实现下的相对趋势，而不是复现原论文最优指标。
+![v4 单变量/多变量差值热力图](../../archive/v4_results/experiments/univariate_multivariate_comparison/figures/v4_feature_mode_delta_heatmap.png)
 
-## 8 结论
+这一结果说明，额外变量并不必然改善目标变量预测。对 LSTM、Transformer、Informer 和 Autoformer 而言，单变量模式在当前实验中全部 10 个配对任务上更优，说明多变量输入可能增加学习难度，或使模型更容易受到变量间弱相关、噪声和尺度差异影响。PatchTST 则表现出不同特征：它在 7 个任务中从多变量输入受益，在 3 个任务中单变量更优。这与 PatchTST 的 channel independence 设计相吻合，即模型可以在通道独立建模的基础上较好地利用多变量历史信息，而不是简单地将所有变量混合。
 
-本文基于统一训练和评估框架，对 LSTM、Transformer、Informer、Autoformer 与 PatchTST 在长时序预测任务中的表现进行了系统比较。实验结果显示，PatchTST 在 ETTh1 的五个预测步长上均取得最低 MSE，Autoformer 在 ETTm1 的五个预测步长上均取得最低 MSE。跨数据集平均后，PatchTST 取得最低平均 MSE，Autoformer 次之，二者明显优于 LSTM、标准 Transformer 和 Informer。
+![v4 单/多变量收益次数](../../archive/v4_results/experiments/univariate_multivariate_comparison/figures/v4_feature_mode_benefit_counts.png)
 
-消融实验进一步表明，PatchTST 的通道独立建模和 Autoformer 的序列分解模块对性能提升贡献最大。预测曲线和残差图说明，即使最优模型能够较好捕捉主要趋势和周期，长步长预测仍存在远期误差累积、局部突变拟合不足和预测平滑化等问题。后续工作可从两个方向推进：进行多随机种子重复验证，以及围绕 patch 长度、分解窗口、模型宽度和 Auto-Correlation 配置开展系统调参。
+从 horizon 趋势看，长预测步长下单变量和多变量之间的差异仍然存在，并不会随着预测窗口拉长自然消失。这意味着输入变量选择本身也是长时序预测中的重要设计问题：当模型结构不能有效处理变量间关系时，更多变量可能反而降低目标列预测精度；当模型能够抑制变量间干扰时，多变量信息才更可能转化为有效收益。
+
+![v4 单/多变量步长趋势](../../archive/v4_results/experiments/univariate_multivariate_comparison/figures/v4_feature_mode_horizon_trends.png)
+
+### 4.5 预测曲线与残差分析
+
+预测曲线与残差分析是理解长步长预测误差来源的重要方式。理想情况下，本文应基于 v2 最优配置 checkpoint 选取代表性任务，例如 ETTh1 h96 PatchTST、ETTh1 h336 PatchTST、ETTm1 h96 Autoformer 或 PatchTST、ETTm1 h336 Autoformer 或 PatchTST，绘制目标列真实值与预测值曲线，并进一步观察残差随预测步长变化的形态。
+
+不过，当前本地归档的 v2 `_results.npy` 文件只保存训练摘要、指标和历史曲线，不包含完整预测序列；本地正式 v2 checkpoint 也不完整，无法在不引入伪结果的情况下重新生成上述代表性预测图。因此，本文在本节保留分析口径而不插入旧 v1 图片。后续补图时应使用 v2 完整 checkpoint 对测试集样本进行推理，优先选择 h96 与 h336 两类预测步长，以便同时观察中期预测和长期预测的差异。
+
+从已有指标趋势仍可推断：随着 horizon 增大，模型整体 MSE 上升、R² 下降，说明远期预测中误差累积更加明显。预测曲线层面通常会表现为输出更平滑、对局部突变反应不足、相位或幅值出现偏差；残差图则可能出现连续偏正或偏负区间，反映模型在某些时间段系统性低估或高估。正式提交前若补齐 v2 预测/残差图，应将图像与这一指标趋势对应起来，而不是只展示单个样本的视觉效果。
+
+### 4.6 复杂度与效率分析
+
+模型复杂度不仅体现在参数量上，也体现在训练和推理成本上。v2 主实验中，LSTM 平均参数量约 57.9 万，是五个模型中最高，但平均 MSE 也最高；PatchTST 平均参数量约 11.3 万，平均 MSE 最低。这说明在当前任务中，参数量并不直接决定预测精度，更关键的是结构是否适合时间序列模式。Transformer 的平均参数量约 33.8 万，性能仍弱于 PatchTST 和 Autoformer，也进一步说明标准注意力结构并非天然适合长时序预测。
+
+![v2 效率权衡图](../../archive/v2_results/experiments/validation_best_full_matrix/figures/v2_efficiency_tradeoff.png)
+
+训练时间方面，v2 中 LSTM 平均训练时间约 41.1 秒，PatchTST 约 58.7 秒，Informer 约 67.1 秒，Transformer 约 82.6 秒，Autoformer 约 88.3 秒。训练时间受模型结构、early stopping、硬件和实现方式共同影响，因此不应脱离实验环境单独解释。PatchTST 在训练成本相对可控的同时取得最低误差，说明其精度—训练成本权衡较好。
+
+纯 forward 推理时间在本机 Apple MPS 上测得。batch size=1 时，PatchTST 平均中位延迟约 1.3669 ms，Transformer 约 1.4791 ms，LSTM 约 2.2747 ms，Informer 约 2.6577 ms，Autoformer 约 7.2089 ms。batch size=128 时，PatchTST 平均单样本延迟约 0.0416 ms，吞吐量约 24101 samples/s，在五个模型中最高。该结果说明 PatchTST 不仅预测精度较好，纯模型前向计算也较高效。Autoformer 虽然结构解释性强，并且在部分任务中具有较好精度，但 batch size=1 下平均 forward 延迟较高，部署时需要考虑实时性要求。
+
+表 9 给出了纯 forward 推理时间的模型级汇总。batch size=1 更接近单样本实时预测延迟，batch size=128 更适合观察批量推理吞吐。
+
+| 模型 | bs=1 中位延迟/ms | bs=128 中位延迟/ms | bs=128 单样本延迟/ms | bs=128 吞吐/s |
+| --- | ---: | ---: | ---: | ---: |
+| PatchTST | 1.3669 | 5.3294 | 0.0416 | 24101.4 |
+| Transformer | 1.4791 | 15.2688 | 0.1193 | 8395.2 |
+| LSTM | 2.2747 | 13.6797 | 0.1069 | 9370.6 |
+| Informer | 2.6577 | 32.2407 | 0.2519 | 4029.4 |
+| Autoformer | 7.2089 | 15.1731 | 0.1185 | 8506.3 |
+
+推理时间的解释必须注意硬件口径：本文推理 benchmark 使用本机 Apple MPS，而 v2 训练结果主要来自 CUDA 环境。二者不能直接用于“同一硬件下训练—推理成本”的严格比较，但可以分别说明训练阶段和部署阶段的成本趋势。若后续需要更严格的工程结论，应在同一 CUDA 机器上复用 `scripts/benchmark_inference.py` 重新测量推理时间。
+
+## 5 讨论
+
+第一，长步长预测性能衰减是本文最稳定的现象之一。随着预测步长从 24 增加到 336，模型需要预测更远未来，局部突变和周期相位变化更难提前判断，误差累积随之增强。即使 PatchTST 和 Autoformer 在多数任务中表现较好，也不能完全避免远期预测的不确定性。
+
+第二，模型结构比单纯模型规模更关键。PatchTST 参数量不高，却取得最低平均 MSE 和较优推理效率，说明 patching 和 channel independence 对当前 ETT 数据非常适配。Autoformer 的序列分解消融结果也表明，显式引入趋势/季节结构能显著影响预测表现。相比之下，标准 Transformer 和 LSTM 即使拥有较多参数，也未能取得更好结果。
+
+第三，单变量与多变量预测之间不存在简单的“变量越多越好”。在 50 个配对任务中，单变量模式赢 43 次，说明额外变量可能引入优化负担或噪声。PatchTST 是唯一大量从多变量输入中受益的模型，这说明多变量信息能否转化为预测收益，与模型处理变量间关系的方式高度相关。
+
+第四，本文仍存在局限性。实验数据集只覆盖 ETTh1 和 ETTm1，结论主要反映 ETT 数据在两种采样频率下的相对趋势。正式结果主要基于单随机种子 42，尚未报告多随机种子的均值和方差。当前模型输出为点预测，未进行概率预测或分位数预测；同时，本文的“多变量”指多变量历史序列输入，并未单独引入日历特征、天气变量等外部协变量。因此，本文更适合作为统一实现和统一实验口径下的模型比较，而不是对原论文最优结果的完全复现。
+
+## 6 结束语
+
+本文围绕长时序预测任务，比较了 LSTM、Transformer、Informer、Autoformer 与 PatchTST 五类模型在 ETTh1 和 ETTm1 数据集上的多步预测表现，并通过调参前后对比、消融实验、单变量/多变量对比和推理效率 benchmark 分析模型结构差异。实验结果表明，PatchTST 在 v2 主实验中整体表现最好，跨 10 个数据集—预测步长任务获得 9 次最低 MSE，平均 MSE 为 0.462621；Autoformer 在部分任务中仍有竞争力，平均 MSE 为 0.501605。
+
+消融实验验证了关键结构的重要性：移除 Autoformer 的序列分解模块后，平均 MSE 上升约 66.2%；取消 PatchTST 的通道独立建模后，平均 MSE 上升约 139.2%。这说明面向时间序列结构的专门设计对长步长预测具有实质贡献。单变量/多变量对比则表明，额外变量并不必然带来收益，单变量模式在 50 个配对任务中赢得 43 次，而多变量优势全部来自 PatchTST，说明变量利用能力依赖模型结构。
+
+复杂度分析进一步显示，PatchTST 在精度、参数量和纯 forward 推理效率之间具有较好平衡；参数量更大的 LSTM 和 Transformer 并未取得更优结果。总体来看，本文完成了统一数据、统一窗口、统一评价指标下的长时序预测模型比较，能够较清晰地展示不同结构设计对预测精度和计算成本的影响。后续工作可以从三个方向扩展：一是进行多随机种子稳定性实验，报告均值与方差；二是补充概率预测，输出预测区间并评估覆盖率；三是引入外生变量或时间特征，进一步分析外部协变量对长时序预测的作用。
 
 ## 参考文献
 
-[1] Hochreiter S, Schmidhuber J. Long Short-Term Memory. Neural Computation, 1997.  
-[2] Vaswani A, Shazeer N, Parmar N, et al. Attention Is All You Need. NeurIPS, 2017.  
-[3] Zhou H, Zhang S, Peng J, et al. Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting. AAAI, 2021.  
-[4] Wu H, Xu J, Wang J, Long M. Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting. NeurIPS, 2021.  
-[5] Nie Y, Nguyen N H, Sinthong P, Kalagnanam J. A Time Series is Worth 64 Words: Long-term Forecasting with Transformers. ICLR, 2023.  
-[6] 项目文档与实验结果：`docs/knowledge/model_introduction.md`、`docs/step/analysis_step6.md`、`results/v1_csv/formal/formal_seed42_all.csv`、`results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`。
+[1] Hochreiter S, Schmidhuber J. Long Short-Term Memory. Neural Computation, 1997, 9(8): 1735–1780.
 
-## 附录 A 术语与缩写
+[2] Vaswani A, Shazeer N, Parmar N, et al. Attention Is All You Need. Advances in Neural Information Processing Systems, 2017, 30: 5998–6008.
 
-| 术语 | 含义 | 本文使用方式 |
-| --- | --- | --- |
-| LSTM | Long Short-Term Memory | 首次全称，后续使用 LSTM |
-| Transformer | 基于自注意力的序列模型 | 指标准 Transformer 基线 |
-| Informer | 使用 ProbSparse Attention 的长序列预测模型 | 高效注意力变体 |
-| Autoformer | 使用序列分解和 Auto-Correlation 的预测模型 | 趋势和周期建模变体 |
-| PatchTST | 使用 patching 和通道独立建模的预测模型 | 局部片段建模变体 |
-| MSE | Mean Squared Error | 主要误差指标，越低越好 |
-| MAE | Mean Absolute Error | 辅助误差指标，越低越好 |
-| R2 | Coefficient of Determination | 拟合优度指标，越高越好 |
-| MAPE | Mean Absolute Percentage Error | 补充百分比误差指标，对接近零的真实值敏感 |
-| MAPE_target | Target-column MAPE | 目标列百分比误差，本文仅作辅助参考 |
-| h24/h48/h96/h168/h336 | 预测步长 | 分别表示预测未来 24/48/96/168/336 个时间步 |
+[3] Zhou H, Zhang S, Peng J, et al. Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting. Proceedings of the AAAI Conference on Artificial Intelligence, 2021, 35(12): 11106–11115.
 
-## 附录 C 主要结果文件
+[4] Wu H, Xu J, Wang J, Long M. Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting. Advances in Neural Information Processing Systems, 2021, 34: 22419–22430.
 
-- `results/v1_csv/formal/formal_seed42_all.csv`
-- `results/v1_md/formal/formal_seed42_all.md`
-- `results/v1_csv/formal/formal_seed42_mape.csv`
-- `results/v1_md/formal/formal_seed42_mape.md`
-- `results/v1_csv/formal/formal_seed42_mape_by_model.csv`
-- `results/v1_md/formal/formal_seed42_mape_by_model.md`
-- `results/univariate_multivariate_csv/feature_mode/feature_mode_seed42_comparison.csv`
-- `results/univariate_multivariate_md/feature_mode/feature_mode_seed42_comparison.md`
-- `results/univariate_multivariate_csv/feature_mode/feature_mode_seed42_comparison_delta.csv`
-- `results/univariate_multivariate_md/feature_mode/feature_mode_seed42_comparison_delta.md`
-- `results/v1_csv/ecl/ecl_smoke_optv2_summary.csv`
-- `results/v1_md/ecl/ecl_smoke_optv2_summary.md`
-- `results/v1_csv/ablation/ablation_seed42_summary.csv`
-- `results/v1_md/ablation/ablation_seed42_summary.md`
-- `results/v1_csv/ablation/ablation_seed42_vs_formal_comparison.csv`
-- `results/v1_md/ablation/ablation_seed42_vs_formal_comparison.md`
-- `results/figures/manifest.json`
-- `results/v1_csv/figures/prediction_samples_summary.csv`
+[5] Nie Y, Nguyen N H, Sinthong P, Kalagnanam J. A Time Series is Worth 64 Words: Long-term Forecasting with Transformers. International Conference on Learning Representations, 2023.
+
+[6] 涂家俊. 基于 LSTM、Transformer 及其高效变体的长时序预测实验结果与代码. 2026. `archive/v2_results/experiments/validation_best_full_matrix/`; `archive/v4_results/experiments/ablation_study/`; `archive/v4_results/experiments/univariate_multivariate_comparison/`.
+
+## 附录：结果文件与图表清单
+
+### A.1 主实验与补充实验表
+
+- v2 主实验汇总：`archive/v2_results/experiments/validation_best_full_matrix/summaries/csv/full_val_best_e50p10_tb_seed42_summary.csv`
+- v1/v2 调参对比来源：`archive/v1_results/experiments/formal_baseline/summaries/csv/formal_seed42_all.csv`
+- v4 消融实验汇总：`archive/v4_results/experiments/ablation_study/summaries/csv/ablation_rerun_seed42_summary.csv`
+- v4 消融配对对比：`archive/v4_results/experiments/ablation_study/summaries/csv/ablation_rerun_seed42_comparison.csv`
+- v4 单变量/多变量对比：`archive/v4_results/experiments/univariate_multivariate_comparison/summaries/csv/feature_mode_full_seed42_comparison.csv`
+- v4 单变量/多变量差值表：`archive/v4_results/experiments/univariate_multivariate_comparison/summaries/csv/feature_mode_full_seed42_comparison_delta.csv`
+- 纯 forward 推理时间：`archive/v2_results/experiments/validation_best_full_matrix/summaries/csv/pure_forward_inference_benchmark_by_model.csv`
+
+### A.2 图表清单
+
+- v2 主实验图：`v2_model_average_metrics.png`、`v2_horizon_trends.png`、`v2_winner_counts.png`
+- v1/v2 对比图：`v2_vs_v1_model_comparison.png`、`v2_vs_v1_task_improvement_heatmap.png`
+- v2 效率图：`v2_efficiency_tradeoff.png`
+- v4 消融图：`v4_ablation_mean_effects.png`、`v4_ablation_task_delta_heatmap.png`、`v4_ablation_resource_tradeoff.png`
+- v4 单/多变量图：`v4_feature_mode_delta_heatmap.png`、`v4_feature_mode_benefit_counts.png`、`v4_feature_mode_horizon_trends.png`
+
+### A.3 推理时间口径
+
+推理时间 benchmark 使用 `scripts/benchmark_inference.py` 生成，默认覆盖 ETTh1、ETTm1、五个预测步长、五个模型和 batch size 1/128。计时范围仅包含 `torch.inference_mode()` 下的 `model(x)`，并在 CUDA/MPS 上进行同步；不包含 DataLoader、数据从 CPU 到设备的搬运、反归一化、指标计算或结果写盘。当前结果设备为 Apple MPS。

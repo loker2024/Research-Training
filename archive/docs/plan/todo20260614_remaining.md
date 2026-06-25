@@ -1,6 +1,6 @@
 # 剩余工作待办清单
 
-更新时间：2026-06-14 12:56:17 +08:00
+更新时间：2026-06-25 10:48 CST
 
 ## 当前已完成
 
@@ -8,9 +8,9 @@
 - [x] ETTh1/ETTm1 正式核心实验：2 数据集 × 5 步长 × 5 模型，共 50 组
 - [x] Autoformer/PatchTST 消融实验：2 数据集 × 2 步长 × 4 消融模型，共 16 组
 - [x] 第 6 步可视化与深入分析：指标趋势图、最优模型图、复杂度图、消融图、预测曲线和残差图
-- [x] 第 7 步报告/论文草稿：`docs/report/experiment_report_demo.md` 与 `docs/report/experiment_paper.md`
+- [x] 旧版报告/论文草稿已清理，已基于 v2/v4 和推理时间 benchmark 重写当前论文稿
 - [x] MAPE 指标汇总与报告补充：生成正式实验 MAPE 明细/聚合表，并补充报告中的 MAPE 说明
-- [x] 单变量 vs 多变量对比实验：新增专用训练脚本、流程 notebook，并完成 h96/h336 代表性快速对比；正式全量实验尚未进行
+- [x] 单变量 vs 多变量对比实验：已完成 v4 全量正式对比（ETTh1/ETTm1 × 5 步长 × 5 模型 × 2 输入模式，共 100 组）
 
 ## 必须优先补齐
 
@@ -20,10 +20,10 @@
 
 - [x] 单变量 vs 多变量对比实验
   - [x] 明确单变量口径：只输入目标列并预测目标列
-  - [x] 优先选择 ETTh1/ETTm1 的 h96 和 h336 做代表性对比
-  - [x] 至少覆盖 `lstm,transformer,autoformer,patchtst`，资源允许再补 Informer
-  - [x] 生成单变量/多变量对比表，并补充到报告实验设置与讨论部分
-  - [ ] 正式全量实验尚未进行：需将 `sample_limit` 改为 `0`，建议 `epochs=20`、`patience=5` 后重跑
+  - [x] 覆盖 ETTh1/ETTm1 的 24/48/96/168/336 五个预测步长
+  - [x] 覆盖 `lstm,transformer,informer,autoformer,patchtst` 五个模型
+  - [x] 生成单变量/多变量对比表、差值表和新版可视化图表
+  - [x] 正式全量结果已归档到 `archive/v4_results/experiments/univariate_multivariate_comparison/`
 
 - [x] MAPE 指标汇总与报告补充
   - [x] 从已有 summary JSON 中提取 `MAPE` 与 `MAPE_target`
@@ -52,6 +52,7 @@
 
 ## 最终交付整理
 
+- [x] 基于 v2/v4 和推理时间结果重新生成当前论文稿：`docs/report/experiment_paper.md`
 - [ ] 补全论文作者、单位、课程信息
 - [ ] 检查报告图片路径、结果表路径和附录文件路径
 - [ ] 根据课程模板决定是否导出 DOCX/PDF

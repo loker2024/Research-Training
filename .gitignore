@@ -1,24 +1,37 @@
+# macOS
 .DS_Store
+
+# Python
 __pycache__/
 *.py[cod]
+*.egg-info/
+*.egg
+dist/
+build/
+
+# Jupyter
 .ipynb_checkpoints/
+
+# Virtual environments
 .venv/
 venv/
 env/
 myenv/
 
-# Local editor and assistant settings.
+# IDE
 .vscode/
 .claude/
+
+# Archives (superseded by archive/ directory)
+*.tar.gz
+*.zip
 
 # Public datasets are often large; keep local data out of git by default.
 data/*.csv
 data/*.txt
 data/*.xlsx
-data/*.zip
 data/processed/
 data/processed_smoke/
-data.zip
 
 # Training outputs can be regenerated.
 outputs/
@@ -26,6 +39,7 @@ checkpoints/
 runs/
 test_results/
 
+# Model weights
 *.pt
 *.pth
 *.ckpt
@@ -39,9 +53,5 @@ events.out.tfevents.*
 # Generated visual summaries.
 combined_visualization.png
 
-
+# Raw data
 /data/raw/
-
-*.gz
-
-

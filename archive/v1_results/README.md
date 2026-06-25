@@ -8,14 +8,15 @@ v1 保存项目第一版正式核心实验，运行标签为 `formal_seed42`。�
 
 | 实验目录 | 实验类型 | 数据范围 | 产物 |
 |---|---|---|---|
-| `experiments/formal_baseline/` | 未调参正式基线 | ETTh1、ETTm1 × 5 个步长 × 5 个模型，共 50 组 | 结果数组、JSON 指标、CSV/Markdown 汇总、预测与残差图 |
+| `experiments/formal_baseline/` | 未调参正式基线 | ETTh1、ETTm1 × 5 个步长 × 5 个模型，共 50 组 | 结果数组、JSON 指标、CSV/Markdown 汇总 |
 
 ## 查找方式
 
 - 单组实验：`experiments/formal_baseline/results/h{步长}/{数据集}/{模型}/formal_seed42/`
 - CSV 汇总：`experiments/formal_baseline/summaries/csv/`
 - Markdown 汇总：`experiments/formal_baseline/summaries/md/`
-- 图表：`experiments/formal_baseline/figures/`
+
+> 旧版 v1 可视化图片和旧报告草稿已清理；当前报告写作优先引用 v2/v4 新图与最新汇总表。
 
 ## 版本结论
 

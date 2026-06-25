@@ -6,6 +6,7 @@
 - `formal_seed42_etth1*.csv`：ETTh1 的分步长或合并汇总
 - `formal_seed42_ettm1*.csv`：ETTm1 的分步长或合并汇总
 - `formal_seed42_mape*.csv`：MAPE 明细及按模型聚合结果
-- `figures/prediction_samples_summary.csv`：预测图和残差图所用样本的索引
+
+> 旧预测图、残差图及对应样本清单已清理；后续报告如需此类图，应基于 v2 最优配置重新生成。
 
 单组 JSON/NPY 结果位于 `../../results/`。

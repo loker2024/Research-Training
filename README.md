@@ -1,29 +1,90 @@
-# Research Training: Long-Term Time Series Forecasting
+# Long-Term Time Series Forecasting: A Comparative Study
 
-基于 LSTM、Transformer、Informer、Autoformer 与 PatchTST 的长时序预测研究项目。
+基于 LSTM、Transformer、Informer、Autoformer 与 PatchTST 的长时序预测模型比较研究。
 
-## 项目范围
+## 研究概述
 
-当前正式实验聚焦 2 个 ETT 数据集：
+本项目在统一实验框架下比较五类模型在长时序预测任务中的表现，覆盖 2 个数据集、5 个预测步长、5 个模型，并结合调参对比、消融实验、单变量/多变量对比和推理效率 benchmark 进行系统分析。
+
+**核心结论**：PatchTST 在 10 个数据集—预测步长任务中获得 9 次最低 MSE，整体表现最优；Autoformer 在部分任务中仍有竞争力。消融实验验证了序列分解和通道独立建模的关键作用。
+
+## 数据集
 
 | 数据集 | 变量数 | 频率 | 切分方式 |
 | --- | ---: | --- | --- |
 | ETTh1 | 7 | 小时 | 前 12 月 / 4 月 / 4 月 |
 | ETTm1 | 7 | 15 分钟 | 前 12 月 / 4 月 / 4 月 |
 
-回看窗口为 96。当前预处理 notebook 生成了 24、48、96、168、336 五组预测步长，正式结果与报告口径均以 ETTh1、ETTm1 为准。
+- 回看窗口：96
+- 预测步长：24、48、96、168、336
 
-## 目录结构
+## 模型
+
+| 模型 | 定位 | 关键思想 |
+| --- | --- | --- |
+| LSTM | RNN 基线 | 门控循环结构 |
+| Transformer | 标准注意力基线 | 全局自注意力 |
+| Informer | 稀疏注意力变体 | ProbSparse attention |
+| Autoformer | 分解式模型 | Series decomposition + Auto-Correlation |
+| PatchTST | Patch 化模型 | Patching + channel independence |
+
+## 主要结果
+
+### v2 主实验（50 组：2 数据集 × 5 步长 × 5 模型）
+
+| 模型 | 平均 MSE | 平均 MAE | 平均 R² | 参数量 | 推理延迟 (bs=1) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| **PatchTST** | **0.4626** | **0.4497** | **0.6366** | 113K | 1.37 ms |
+| Autoformer | 0.5016 | 0.4779 | 0.6061 | 111K | 7.21 ms |
+| Transformer | 0.8217 | 0.6740 | 0.3547 | 338K | 1.48 ms |
+| Informer | 0.8901 | 0.6860 | 0.3010 | 193K | 2.66 ms |
+| LSTM | 0.9871 | 0.6998 | 0.2249 | 579K | 2.27 ms |
+
+### 消融实验（24 组）
+
+| 消融项 | ΔMSE/% |
+| --- | ---: |
+| Autoformer 去序列分解 | +66.2% |
+| PatchTST 去通道独立 | +139.2% |
+| PatchTST 去 Patching | +7.7% |
+| Autoformer 去 Auto-Correlation | -3.1% |
+
+### 单变量 vs 多变量（100 组，50 对配对任务）
+
+- 单变量胜出：43 次
+- 多变量胜出：7 次（全部来自 PatchTST）
+
+## 项目结构
 
 ```text
 Research-Training/
-├── data/           # 原始数据与预处理数据，本地保存，不上传 GitHub
-├── docs/           # 项目文档、进度记录、报告资料
-├── models/         # LSTM、Transformer、Informer、Autoformer、PatchTST 与训练框架
-├── notebooks/      # 数据准备、基线训练、变体训练 notebook
-├── 参考资料/        # 论文 PDF、模板、报告参考资料
-├── results/        # 正式实验、消融实验、图表与汇总表
-└── checkpoints/    # 模型权重，本地保存，不上传 GitHub
+├── archive/              # 实验结果归档
+│   ├── v1_results/       # 未调参基线（50 组）
+│   ├── v2_results/       # 调参后主实验（50 组）
+│   ├── v3_results/       # 单/多变量阶段性验证（40 组）
+│   ├── v4_results/       # 消融 + 完整单/多变量对比（124 组）
+│   └── docs/             # 历史开发记录
+├── configs/              # 实验配置文件
+├── data/                 # 原始数据集（本地，不上传）
+├── docs/
+│   ├── report/           # 论文（Markdown + LaTeX + PDF）
+│   ├── analysis_results2.md
+│   ├── best_model_params.md
+│   └── knowledge/        # 参考资料
+├── models/               # 模型实现
+│   ├── lstm.py
+│   ├── transformer.py
+│   ├── informer.py
+│   ├── autoformer.py
+│   ├── patchtst.py
+│   ├── trainer.py
+│   └── ablation.py
+├── notebooks/            # Jupyter 笔记本
+│   ├── baseline/         # 基线训练
+│   ├── tuning/           # 超参搜索
+│   └── visualization/    # 可视化
+├── scripts/              # 训练、调参、评估脚本
+└── 参考资料/              # 论文 PDF 与模板
 ```
 
 ## 环境配置
@@ -32,93 +93,24 @@ Research-Training/
 pip install -r requirements.txt
 ```
 
-推荐按平台使用现有环境：
+依赖：`torch`, `numpy`, `pandas`, `scikit-learn`, `matplotlib`, `tqdm`, `tensorboard`, `jupyter`
 
-```bash
-# Mac
-conda activate miniMac
+## 论文
 
-# Windows（若 myenv 是 Conda 环境）
-conda activate myenv
+- Markdown 版：`docs/report/experiment_paper.md`
+- LaTeX 源码：`docs/report/overleaf/`
+- PDF：`docs/report/overleaf_project.pdf`
 
-# Windows（若 myenv 在项目根目录）
-myenv\Scripts\activate
-```
+## 结果文件索引
 
-`myenv/` 已被 `.gitignore` 忽略，用于 Windows 本地环境；Mac 侧使用 Conda 的 `miniMac`。
+| 内容 | 路径 |
+| --- | --- |
+| v2 主实验汇总 | `archive/v2_results/.../summaries/csv/full_val_best_e50p10_tb_seed42_summary.csv` |
+| v1/v2 调参对比 | `archive/v1_results/.../summaries/csv/formal_seed42_all.csv` |
+| v4 消融汇总 | `archive/v4_results/experiments/ablation_study/summaries/csv/` |
+| v4 单/多变量对比 | `archive/v4_results/experiments/univariate_multivariate_comparison/summaries/csv/` |
+| 推理时间 benchmark | `archive/v2_results/.../summaries/csv/pure_forward_inference_benchmark_by_model.csv` |
 
-## 运行顺序
+## 许可
 
-1. 运行 `notebooks/data_preparation.ipynb` 或 `python scripts/preprocess_data.py --datasets ETTh1 --horizons 96` 完成数据下载、归一化和滑动窗口预处理。
-2. 运行 `notebooks/train_baseline.ipynb` 训练 LSTM 与 Transformer 基线。
-3. 运行 `notebooks/train_variants.ipynb` 或 `python scripts/run_experiments.py --datasets ETTh1 --horizons 96 --models autoformer` 训练 Informer、Autoformer 与 PatchTST。
-4. 运行 `python scripts/summarize_results.py --datasets ETTh1 --horizons 24,48,96,168,336 --output-prefix ETTh1_quick_summary` 汇总已保存结果。
-5. 新训练结果会直接写入 `results/h{horizon}/{dataset}/{model}/{run_tag}/`；旧顶层结果可运行 `python scripts/organize_results.py --overwrite` 链接到同样的按步长结构。当前仓库追踪清理后的正式结果与汇总表，临时 quick/smoke/optv2 中间结果不保留。
-6. 每完成独立步骤后更新 `docs/progress.md`。
-
-常用命令示例：
-
-```bash
-# 使用配置文件运行，适合正式实验和复现实验
-python scripts/run_experiments.py --config configs/core_experiment_smoke.json
-
-# ETTh1/ETTm1 正式核心实验配置（运行时间较长）
-python scripts/run_experiments.py --config configs/core_experiment_etth1_ettm1_formal.json
-
-# Autoformer/PatchTST 消融实验（建议确认 CUDA 环境后运行）
-python -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))"
-python scripts/run_experiments.py --config configs/ablation_etth1_ettm1.json
-python scripts/summarize_results.py \
-  --datasets ETTh1,ETTm1 \
-  --horizons 96,336 \
-  --models autoformer_no_decomp,autoformer_no_autocorr,patchtst_no_patch,patchtst_channel_mix \
-  --run-tags ablation_seed42 \
-  --output-prefix ablation_seed42_summary
-
-# 第 6 步：生成报告用可视化图表与预测/残差分析
-# 该脚本只读取已有 CSV、checkpoint 和测试集，不会重新训练模型
-python -m py_compile scripts/visualize_results.py
-python scripts/visualize_results.py
-
-# 图表输出：results/figures/
-# 分析文档：docs/step/analysis_step6.md
-# Notebook 版本：notebooks/visualize_results.ipynb
-
-# 中断后续跑：配置文件已默认开启 skip_existing，也可命令行显式开启
-python scripts/run_experiments.py \
-  --config configs/core_experiment_etth1_ettm1_formal.json \
-  --skip-existing
-
-# 将旧顶层结果补充整理到按步长视图
-python scripts/organize_results.py --overwrite
-
-# 优化变体重训结果使用 run tag，避免覆盖旧结果
-python scripts/run_experiments.py \
-  --datasets ETTh1,ETTm1 \
-  --horizons 24,48,96,168,336 \
-  --models informer,patchtst \
-  --run-tag optv2 \
-  --seed 42
-
-```
-
-结果目录分类：
-
-```text
-results/
-├── h24/{dataset}/{model}/{run_tag}/
-├── h48/{dataset}/{model}/{run_tag}/
-├── h96/{dataset}/{model}/{run_tag}/
-├── h168/{dataset}/{model}/{run_tag}/
-├── h336/{dataset}/{model}/{run_tag}/
-├── v1_csv/
-├── v1_md/
-├── figures/
-└── RESULTS_INDEX.md
-```
-
-## 当前进度
-
-进度记录见 `docs/progress.md`，实施步骤见 `docs/step/项目步骤.md`。第 6 步分析见 `docs/step/analysis_step6.md`，实验报告草稿见 `docs/report/experiment_report_demo.md`，实验论文稿见 `docs/report/experiment_paper.md`。
-
-当前主实验正式结果覆盖 ETTh1/ETTm1，共 50 组完整矩阵实验；ECL 不再作为本项目报告的必需数据集。
+[MIT License](LICENSE)

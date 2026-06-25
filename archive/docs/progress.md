@@ -1,5 +1,220 @@
 > 项目概述：基于 LSTM、Transformer、Informer、Autoformer、PatchTST 的长时序预测研究项目。
 
+# 2026-06-25
+
+## 论文实验版本说明补充 v3 ✅
+
+**完成时间**：2026-06-25 11:25 CST
+
+**完成内容**：
+1. ✅ 在论文 3.4 的实验版本说明表中补充 v3
+2. ✅ 明确 v3 是单变量/多变量对比的阶段性验证，覆盖 ETTh1、ETTm1 的 h96/h336，共 40 组
+3. ✅ 明确 v3 只作为方法验证和历史归档，不作为正文主要结论来源；完整单/多变量结论以 v4 的 100 组全量实验为准
+
+**修改的文件**：
+- `docs/report/experiment_paper.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ 论文当前稿约 1.82 万字符，277 行
+- ✅ Markdown 表格行数增加到 63 行
+- ✅ 12 个 Markdown 图片引用全部存在
+- ✅ `git diff --check` 通过
+
+**下一步任务**：
+1. 继续检查正文是否还有归档版本、结果来源或实验边界未提前交代清楚
+2. 补全作者、单位、课程、学号等提交信息
+
+## 论文补充实验版本说明表 ✅
+
+**完成时间**：2026-06-25 11:22 CST
+
+**完成内容**：
+1. ✅ 在论文 3.4 节开头新增实验版本说明表，提前解释 v1、v2、v4 消融和 v4 单/多变量分别是什么
+2. ✅ 表格展示每个版本的运行标签、数据范围、实验目的和本文用途，帮助读者理解后续为什么比较 v1/v2、为什么用 v4 做补充分析
+3. ✅ 明确 v1 只用于未调参基线对照，v2 是五模型性能比较主结果，v4 用于结构组件和输入模式分析
+4. ✅ 顺延后文表格编号，使全文表号从表 1 到表 9 连续不重复
+
+**修改的文件**：
+- `docs/report/experiment_paper.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ 论文当前稿约 1.81 万字符，276 行
+- ✅ Markdown 表格行数增加到 62 行
+- ✅ 12 个 Markdown 图片引用全部存在
+- ✅ `git diff --check` 通过
+
+**下一步任务**：
+1. 可继续检查数据集设置、预测步长和评价指标是否需要集中表格化
+2. 补全作者、单位、课程、学号等提交信息
+
+## 论文 3.4 补充训练参数表 ✅
+
+**完成时间**：2026-06-25 11:20 CST
+
+**完成内容**：
+1. ✅ 在论文 3.4“训练与调参设置”中新增 v2 主实验训练参数表
+2. ✅ 表格按模型展示 `epochs`、`patience`、`batch size`、`learning rate`、`weight decay` 和 `seed`
+3. ✅ 将后文结果表编号顺延，使全文表号从表 1 到表 8 连续不重复
+
+**修改的文件**：
+- `docs/report/experiment_paper.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ 论文当前稿约 1.77 万字符，269 行
+- ✅ Markdown 表格行数增加到 56 行
+- ✅ 12 个 Markdown 图片引用全部存在
+- ✅ `git diff --check` 通过
+
+**下一步任务**：
+1. 可继续检查数据集信息是否也需要表格化
+2. 补全作者、单位、课程、学号等提交信息
+
+## 论文 3.3 模型设置补充参数表 ✅
+
+**完成时间**：2026-06-25 11:17 CST
+
+**完成内容**：
+1. ✅ 将论文 3.3 节从纯文字描述改为“模型定位表 + 结构参数表”的形式
+2. ✅ 新增模型定位表，说明 LSTM、Transformer、Informer、Autoformer、PatchTST 的本文角色、关键思想和观察目的
+3. ✅ 新增 v2 主实验结构参数表，集中展示各模型调优后的核心结构参数
+4. ✅ 顺延后文表格编号，使全文表号从表 1 到表 7 连续不重复
+
+**修改的文件**：
+- `docs/report/experiment_paper.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ 论文当前稿约 1.73 万字符，261 行
+- ✅ Markdown 表格行数增加到 49 行
+- ✅ 12 个 Markdown 图片引用全部存在
+- ✅ `git diff --check` 通过
+
+**下一步任务**：
+1. 继续检查是否还有适合表格化的实验设置、数据集信息或附录清单
+2. 补全作者、单位、课程、学号等提交信息
+
+## 论文补充关键数据表格 ✅
+
+**完成时间**：2026-06-25 11:12 CST
+
+**完成内容**：
+1. ✅ 在论文结果分析部分补充 5 张 Markdown 数据表，形成“表格给精确数值、图表看趋势”的展示结构
+2. ✅ 新增 v2 五模型平均性能与复杂度表，展示 MSE、MAE、R²、目标列 MSE、参数量和训练时间
+3. ✅ 新增 v1/v2 调参前后平均 MSE 对比表，明确各模型调参后的误差变化率
+4. ✅ 新增 v4 消融平均影响表，列出各消融变体的 ΔMSE、ΔMSE% 和 ΔR²
+5. ✅ 新增单变量/多变量胜出次数表，突出 43/50 个配对任务单变量更优、PatchTST 贡献全部多变量收益
+6. ✅ 新增纯 forward 推理时间汇总表，展示 batch size 1 和 128 下的延迟、单样本延迟和吞吐
+
+**修改的文件**：
+- `docs/report/experiment_paper.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ 论文当前稿约 1.68 万字符，245 行
+- ✅ 12 个 Markdown 图片引用全部存在
+- ✅ 新增表格通过 Markdown 基本格式检查
+- ✅ `git diff --check` 通过
+
+**下一步任务**：
+1. 继续补全作者、单位、课程、学号等提交信息
+2. 若需要 Word/PDF 交付，可基于当前 Markdown 稿导出并检查版式
+
+## 学术论文式当前稿重写 ✅
+
+**完成时间**：2026-06-25 11:01 CST
+
+**完成内容**：
+1. ✅ 按学术论文式结构重新生成当前论文稿，主线改为 v2 调优后完整矩阵 + v4 消融 + v4 单/多变量 + 纯 forward 推理时间
+2. ✅ 写入摘要、关键词、引言、相关工作、方法与实验设计、实验结果与分析、讨论、结论、参考文献和附录
+3. ✅ 将 v2 主实验平均结果、v1/v2 调参对比、v4 消融结论、v4 单/多变量结论和推理时间 benchmark 写入正文
+4. ✅ 使用 v2/v4 新图替代旧 v1 图片，所有 Markdown 图片路径均指向当前存在的归档图表
+5. ✅ 对预测曲线与残差分析章节保留要求口径，同时明确当前本地 v2 `_results.npy` 不含预测序列且正式 checkpoint 不完整，不能伪造旧图
+6. ✅ 更新 README 和剩余待办清单，使当前论文入口指向新稿
+
+**修改的文件**：
+- `docs/report/experiment_paper.md`
+- `README.md`
+- `docs/plan/todo20260614_remaining.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ 新论文稿共 195 行，约 1.46 万字符
+- ✅ 12 个 Markdown 图片引用均检查存在
+- ✅ 正文未引用已删除的 v1 旧图片
+- ✅ 当前稿仍保留作者和单位占位，等待补充真实提交信息
+
+**下一步任务**：
+1. 补全作者、单位、课程、学号等提交信息
+2. 如课程强制要求预测曲线和残差图，应先补齐 v2 正式 checkpoint 或重新推理生成代表性图片
+3. 根据课程模板决定是否导出 DOCX/PDF
+
+## 旧图片和旧报告清理 ✅
+
+**完成时间**：2026-06-25 10:48 CST
+
+**完成内容**：
+1. ✅ 删除旧报告草稿，避免后续继续引用 `results/...`、`formal_seed42`、`ablation_seed42` 等旧口径
+2. ✅ 删除 v1 未调参基线目录下的旧可视化图片、旧图表 manifest 和旧预测图清单
+3. ✅ 保留 v1 的核心 CSV/Markdown/JSON/NPY 结果，确保 v2 调优对比仍可追溯
+4. ✅ 保留 v2 调优图、v4 消融图、v4 单/多变量图和推理时间 benchmark 结果，作为后续新报告的主图表来源
+5. ✅ 更新 `archive/v1_results/README.md`，说明 v1 当前仅保留正式基线数据产物，旧图和旧报告已清理
+
+**修改的文件**：
+- 删除 `docs/report/experiment_paper.md`
+- 删除 `docs/report/experiment_report_demo.md`
+- 删除 `archive/v1_results/experiments/formal_baseline/figures/` 下旧 PNG 图和 `manifest.json`
+- 删除 `archive/v1_results/experiments/formal_baseline/summaries/csv/figures/prediction_samples_summary.csv`
+- `archive/v1_results/README.md`
+- `archive/v1_results/experiments/formal_baseline/summaries/csv/README.md`
+- `README.md`
+- `docs/plan/todo20260614_remaining.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ `docs/report/` 当前无旧 Markdown 报告残留
+- ✅ `archive/v1_results/experiments/formal_baseline/figures/` 当前无旧图残留
+- ✅ 旧预测图清单已删除，不再保留指向旧图片的坏路径
+- ✅ v2/v4 新图仍保留在各自 `figures/` 目录
+- ✅ v1 正式基线 CSV/Markdown/JSON/NPY 数据结果未删除
+
+**下一步任务**：
+1. 基于 v2/v4 和推理时间结果重新生成最终报告
+2. 如最终报告仍需要预测曲线/残差图，应按 v2 最优配置重新绘制，不再引用 v1 旧图
+
+## 五模型纯 forward 推理时间补测 ✅
+
+**完成时间**：2026-06-25 10:39 CST
+
+**完成内容**：
+1. ✅ 新增 `scripts/benchmark_inference.py`，用于补测五个模型的纯模型前向推理时间
+2. ✅ 计时口径限定为 `torch.inference_mode()` 下的 `model(x)`，不包含 DataLoader、数据搬运、指标计算、反归一化或结果保存时间
+3. ✅ 推理结构参数继承 `docs/best_model_params.md` 中的 v2 调优后配置，避免误用早期默认结构
+4. ✅ 按正式实验形状完成 2 个数据集、5 个预测步长、5 个模型、2 个 batch size 的 benchmark，共 100 个明细组合
+5. ✅ 输出明细 CSV、按模型汇总 CSV、按模型/步长汇总 CSV、元数据 JSON 和 Markdown 说明，供报告“模型复杂度/推理时间”部分引用
+
+**修改的文件**：
+- `scripts/benchmark_inference.py`
+- `archive/v2_results/experiments/validation_best_full_matrix/summaries/csv/pure_forward_inference_benchmark.csv`
+- `archive/v2_results/experiments/validation_best_full_matrix/summaries/csv/pure_forward_inference_benchmark_by_model.csv`
+- `archive/v2_results/experiments/validation_best_full_matrix/summaries/csv/pure_forward_inference_benchmark_by_model_horizon.csv`
+- `archive/v2_results/experiments/validation_best_full_matrix/summaries/csv/pure_forward_inference_benchmark_metadata.json`
+- `archive/v2_results/experiments/validation_best_full_matrix/summaries/md/pure_forward_inference_benchmark.md`
+- `docs/progress.md`
+
+**测试结果**：
+- ✅ `conda run -n miniMac python -m py_compile scripts/benchmark_inference.py` 通过
+- ✅ CPU smoke benchmark 通过，确认脚本可在外部临时路径输出 CSV/Markdown/JSON
+- ✅ 正式 benchmark 在本机 `mps` 设备完成，配置为 `warmup=30`、`repeats=200`、`lookback=96`、`dtype=float32`
+- ✅ 明细 CSV 为 101 行（100 个组合 + 表头），按模型汇总 CSV 为 11 行（10 个 batch/model 组合 + 表头），按模型/步长汇总 CSV 为 51 行（50 个 batch/model/horizon 组合 + 表头）
+- ✅ 元数据记录了设备、PyTorch 版本、随机种子、权重来源和配置来源，便于报告说明计时边界
+
+**下一步任务**：
+1. 报告中引用推理时间时需注明这是本机 Apple MPS 上的纯 forward 延迟，不能直接等同于远程 CUDA 端到端预测耗时
+2. 若后续需要和 CUDA 训练时间放在同一硬件口径下比较，可在 CUDA 机器上复用同一脚本重跑一次
+
 # 2026-06-22
 
 ## 单/多变量可视化逻辑复核与修正 ✅
@@ -2850,6 +3065,147 @@ test MSE/R² -> 只对验证集选出的配置做最终报告
 **下一步任务**：
 1. 新建重做消融实验配置，建议使用新 run tag：`ablation_rerun_seed42`
 2. 将 baseline 与消融模型放在同一批次中重跑，便于同环境公平比较
+
+
+## 论文 Overleaf 项目生成 ✅
+
+**完成时间**：2026/06/25 11:41
+
+**完成内容**：
+1. ✅ 检查本地论文 `docs/report/experiment_paper.md`，确认正文已包含 v1/v2/v3/v4 版本说明、模型结构参数表、训练参数表、主实验结果、调参对比、消融实验、单变量/多变量对比和效率分析
+2. ✅ 读取 `参考资料/模版和其他资料/小论文模板-2026.doc`，按模板中的中英文题名、作者单位、摘要、关键词、分类号、正文、图表和参考文献结构整理 LaTeX 入口文件
+3. ✅ 生成 Overleaf 项目目录 `docs/report/overleaf/`，包含 `main.tex`、`body_content.tex`、`references.bib`、`README.md` 和 `figures/`
+4. ✅ 将论文引用的 12 张 v2/v4 实验图复制到 Overleaf 项目的 `figures/` 目录
+5. ✅ 打包生成可直接上传 Overleaf 的 `docs/report/overleaf_project.zip`
+
+**修改的文件**：
+- `docs/report/overleaf/main.tex` - 新增 Overleaf 主文件，包含中英文题名、摘要、关键词和 LaTeX 导言区
+- `docs/report/overleaf/body_content.tex` - 新增论文正文 LaTeX 文件
+- `docs/report/overleaf/references.bib` - 新增参考文献 BibTeX 条目
+- `docs/report/overleaf/README.md` - 新增 Overleaf 上传与编译说明
+- `docs/report/overleaf/figures/` - 新增论文图片副本
+- `docs/report/overleaf_project.zip` - 新增 Overleaf 上传压缩包
+- `docs/progress.md` - 追加本次进度记录
+
+**测试结果**：
+- ✅ Overleaf 项目中 12 个图片引用均能在 `figures/` 中找到对应文件
+- ✅ 压缩包包含 `main.tex`、`body_content.tex`、`references.bib`、`README.md` 和全部图片
+- ✅ `git diff --check` 通过
+- ⚠️ 本机未安装 `xelatex`，因此未在本地编译 PDF；上传 Overleaf 后需选择 XeLaTeX 编译
+
+**下一步任务**：
+1. 在 Overleaf 中上传 `docs/report/overleaf_project.zip` 并选择 XeLaTeX 编译
+2. 将 `待补充` 的作者、单位、英文作者和英文单位替换为真实信息
+3. 若后续补齐 v2 checkpoint，可再生成预测曲线与残差图并插入 4.5 节
+
+## Overleaf 长代码溢出版面修复 ✅
+
+**完成时间**：2026/06/25 13:21
+
+**完成内容**：
+1. ✅ 针对 Overleaf 编译后长代码/长路径超出页面的问题，在 `main.tex` 中加入 `xurl` 支持和更宽松的断行设置
+2. ✅ 将正文和附录中的长路径、脚本名、函数名从不可自动断行的 `\texttt{...}` 改为可断行的 `\path{...}`
+3. ✅ 重新打包 `docs/report/overleaf_project.zip`，用于替换 Overleaf 中的旧文件
+
+**修改的文件**：
+- `docs/report/overleaf/main.tex` - 增加 `xurl`、`\emergencystretch` 和 `\Urlmuskip` 设置
+- `docs/report/overleaf/body_content.tex` - 替换长路径和代码片段的排版命令
+- `docs/report/overleaf_project.zip` - 重新生成 Overleaf 上传包
+- `docs/progress.md` - 追加本次修复记录
+
+**测试结果**：
+- ✅ `body_content.tex` 中 45 字符以上的长 `\texttt{...}` 已清理
+- ✅ `body_content.tex` 中新增 29 个可断行 `\path{...}` 命令
+- ✅ 压缩包包含更新后的 `main.tex` 和 `body_content.tex`
+- ✅ `git diff --check` 通过
+
+**下一步任务**：
+1. 在 Overleaf 中替换 `main.tex` 和 `body_content.tex`，或重新上传新版 `overleaf_project.zip`
+2. 重新编译后检查附录路径、长函数名和表格是否仍有溢出
+
+
+## Overleaf 标题重复编号与附录编号修复 ✅
+
+**完成时间**：2026/06/25 13:26
+
+**完成内容**：
+1. ✅ 移除 `body_content.tex` 正文章节标题中的手写数字，避免与 LaTeX 自动编号重复显示
+2. ✅ 将附录标题改为 `\section*{...}`，使“附录：结果文件与图表清单”不参与自动章节编号
+3. ✅ 将附录小节改为 `\subsection*{A.1 ...}`、`\subsection*{A.2 ...}`、`\subsection*{A.3 ...}`，保留附录内部编号文字但不再叠加 LaTeX 自动编号
+4. ✅ 重新打包 `docs/report/overleaf_project.zip`
+
+**修改的文件**：
+- `docs/report/overleaf/body_content.tex` - 修复章节标题和附录标题编号
+- `docs/report/overleaf_project.zip` - 重新生成 Overleaf 上传包
+- `docs/progress.md` - 追加本次修复记录
+
+**测试结果**：
+- ✅ 正文 `\section{...}` 与 `\subsection{...}` 中不再残留手写 1/2.1/4.5 等编号
+- ✅ 附录标题已改为不自动编号
+- ✅ 三个附录小节均已改为不自动编号
+- ✅ `git diff --check` 通过
+
+**下一步任务**：
+1. 在 Overleaf 中替换 `body_content.tex`，或重新上传新版 `overleaf_project.zip`
+2. 重新编译后确认标题显示为“4.5 预测曲线与残差分析”，附录显示为“附录：结果文件与图表清单”和“A.1/A.2/A.3”
+
+
+## Overleaf 表格文字重叠修复 ✅
+
+**完成时间**：2026/06/25 13:32
+
+**完成内容**：
+1. ✅ 针对表 3 中长运行标签与相邻列文字重叠的问题，将表格内的 run tag 改为更适合阅读的短标签
+2. ✅ 在表 3 后保留原始运行标签说明，避免信息丢失
+3. ✅ 针对表 7 中消融模型内部文件名过长导致重叠的问题，将基线模型和消融模型改为中文短名
+4. ✅ 重新打包 `docs/report/overleaf_project.zip`
+
+**修改的文件**：
+- `docs/report/overleaf/body_content.tex` - 调整表 3 与表 7 的表格内容和列宽
+- `docs/report/overleaf_project.zip` - 重新生成 Overleaf 上传包
+- `docs/progress.md` - 追加本次修复记录
+
+**测试结果**：
+- ✅ 表 3 已使用“基线实验”“调优主实验”“完整输入模式实验”等短标签
+- ✅ 表 7 已使用“Autoformer 基线”“PatchTST 基线”“通道混合”等短标签
+- ✅ 表格行中不再保留 `patchtst_ablation_base`、`autoformer_ablation_base` 等超长内部名
+- ✅ `git diff --check` 通过
+
+**下一步任务**：
+1. 在 Overleaf 中替换 `body_content.tex`，或重新上传新版 `overleaf_project.zip`
+2. 重新编译后检查其他表格是否仍有溢出或重叠
+
+
+## Overleaf 作者学院、结束语与参考文献格式修订 ✅
+
+**完成时间**：2026/06/25 13:41
+
+**完成内容**：
+1. ✅ 将论文作者信息补充为“涂家俊”
+2. ✅ 将学院信息补充为“合肥工业大学计算机与信息学院，合肥 230601”，并同步补充英文作者与英文单位
+3. ✅ 将正文第 6 节由“结论”调整为模板风格的“结束语”，并补充总结与展望衔接文字
+4. ✅ 将参考文献改为模板截图对应的 `[1] ...` 列表格式；Overleaf 中使用 `thebibliography`，参考文献标题不再自动编号
+5. ✅ 同步更新本地 Markdown 论文与 Overleaf 项目，并重新打包 `docs/report/overleaf_project.zip`
+
+**修改的文件**：
+- `docs/report/experiment_paper.md` - 更新作者学院、结束语和参考文献格式
+- `docs/report/overleaf/main.tex` - 更新中英文作者与单位信息
+- `docs/report/overleaf/body_content.tex` - 更新结束语和参考文献格式
+- `docs/report/overleaf/README.md` - 更新作者学院说明
+- `docs/report/overleaf_project.zip` - 重新生成 Overleaf 上传包
+- `docs/progress.md` - 追加本次修订记录
+
+**测试结果**：
+- ✅ `main.tex` 已包含“涂家俊”和“合肥工业大学计算机与信息学院，合肥 230601”
+- ✅ `body_content.tex` 已包含 `\section{结束语}`
+- ✅ `body_content.tex` 已使用 `\section*{参考文献}` 和 `thebibliography` 格式
+- ✅ `experiment_paper.md` 已同步为 `[1] ...` 参考文献格式
+- ✅ 压缩包包含更新后的 `main.tex` 和 `body_content.tex`
+- ✅ `git diff --check` 通过
+
+**下一步任务**：
+1. 在 Overleaf 中替换 `main.tex` 和 `body_content.tex`，或重新上传新版 `overleaf_project.zip`
+2. 重新编译后检查首页作者学院、结束语标题和参考文献编号格式是否符合模板截图
 
 
 ## 待办事项

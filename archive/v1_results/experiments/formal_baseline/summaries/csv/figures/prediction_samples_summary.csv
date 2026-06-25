@@ -1,5 +1,0 @@
-dataset,horizon,model,target_idx,prediction_shape,target_shape,prediction_figure,residual_figure
-ETTh1,96,patchtst,6,32x96x7,32x96x7,results/figures/prediction_ETTh1_h96_patchtst.png,results/figures/residual_ETTh1_h96_patchtst.png
-ETTh1,336,patchtst,6,32x336x7,32x336x7,results/figures/prediction_ETTh1_h336_patchtst.png,results/figures/residual_ETTh1_h336_patchtst.png
-ETTm1,96,autoformer,6,32x96x7,32x96x7,results/figures/prediction_ETTm1_h96_autoformer.png,results/figures/residual_ETTm1_h96_autoformer.png
-ETTm1,336,autoformer,6,32x336x7,32x336x7,results/figures/prediction_ETTm1_h336_autoformer.png,results/figures/residual_ETTm1_h336_autoformer.png

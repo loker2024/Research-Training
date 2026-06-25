@@ -1,0 +1,88 @@
+\documentclass[UTF8,a4paper,zihao=-4]{ctexart}
+
+% ---------------------------------------------------------------------------
+% Overleaf 编译说明
+% ---------------------------------------------------------------------------
+% 1. 上传本目录全部文件到 Overleaf。
+% 2. Menu -> Compiler 选择 XeLaTeX。
+% 3. main.tex 是主文件；正文由 body_content.tex 引入，图片位于 figures/。
+
+\usepackage[a4paper,left=2.5cm,right=2.5cm,top=2.6cm,bottom=2.6cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{xurl}
+\usepackage{hyperref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue
+}
+
+\graphicspath{{figures/}}
+\setkeys{Gin}{width=0.92\linewidth,keepaspectratio}
+\captionsetup[figure]{name=图,labelsep=quad,font=small}
+\captionsetup[table]{name=表,labelsep=quad,font=small}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.25em}
+\linespread{1.25}
+\emergencystretch=6em
+\Urlmuskip=0mu plus 1mu
+
+% Pandoc 生成正文时需要的兼容命令。
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\pandocbounded}[1]{#1}
+
+\begin{document}
+
+\begin{center}
+  {\zihao{2}\heiti 基于 LSTM、Transformer 及其高效变体的长时序预测模型比较研究}\par
+  \vspace{0.8em}
+  {\zihao{4} 涂家俊\textsuperscript{1}}\par
+  \vspace{0.3em}
+  {\zihao{5}\textsuperscript{1} 合肥工业大学计算机与信息学院，合肥 230601}\par
+\end{center}
+
+\vspace{0.8em}
+
+\noindent\textbf{摘\quad 要：}
+长时序预测需要利用较长历史窗口对未来多个时间步进行连续预测，在能源负荷、交通流量、工业监测和气象分析等场景中具有重要应用价值。随着预测步长增加，模型不仅要捕捉局部趋势和周期变化，还需要面对长期依赖建模、误差累积和计算开销增大的问题。本文围绕 ETTh1 与 ETTm1 两个公开电力变压器温度数据集，比较 LSTM、Transformer、Informer、Autoformer 与 PatchTST 五类模型在多步预测任务中的表现。实验统一采用 96 步回看窗口，并设置 24、48、96、168、336 五种预测步长；评价指标包括 MSE、MAE、R$^2$ 与 MAPE，其中 MSE、MAE 和 R$^2$ 作为主要分析指标，MAPE 作为补充参考。本文以验证集最优配置重训得到的 v2 完整矩阵作为主实验结果，并进一步结合 v4 消融实验、完整单变量/多变量对比实验以及纯模型 forward 推理时间 benchmark，分析不同结构设计对预测精度、输入变量利用能力和计算效率的影响。实验结果表明，PatchTST 在 10 个数据集--预测步长任务中获得 9 次最低 MSE，整体性能最优；Autoformer 在部分高频序列任务上仍具有竞争力。消融结果显示，Autoformer 的序列分解模块和 PatchTST 的通道独立建模对性能贡献明显。单变量/多变量对比进一步说明，额外变量并不总能稳定改善目标列预测，能否抑制变量间噪声取决于模型结构。复杂度分析表明，PatchTST 在预测精度和纯 forward 推理效率之间表现出较好的平衡。
+
+\vspace{0.4em}
+\noindent\textbf{关键词：} 长时序预测；Transformer；PatchTST；Autoformer；消融实验；多变量预测
+
+\vspace{0.4em}
+\noindent\textbf{中图法分类号：} TP391.4
+
+\vspace{1.4em}
+
+\begin{center}
+  {\zihao{3}\bfseries A Comparative Study of Long-term Time Series Forecasting Models Based on LSTM, Transformer and Efficient Variants}\par
+  \vspace{0.8em}
+  {\zihao{5} Tu Jiajun\textsuperscript{1}}\par
+  \vspace{0.3em}
+  {\zihao{5}\textsuperscript{1} School of Computer and Information, Hefei University of Technology, Hefei 230601, China}\par
+\end{center}
+
+\vspace{0.6em}
+
+\noindent\textbf{Abstract:}
+Long-term time series forecasting aims to predict multiple future time steps from historical observations and is widely used in energy, traffic and industrial monitoring scenarios. This paper compares five representative models, namely LSTM, Transformer, Informer, Autoformer and PatchTST, on the ETTh1 and ETTm1 datasets under a unified experimental setting. The look-back window is fixed to 96, and five forecasting horizons, 24, 48, 96, 168 and 336, are evaluated. The main results are based on the v2 full experiment matrix retrained with validation-selected configurations, while v4 ablation studies, univariate/multivariate comparisons and pure forward inference benchmarks are used for deeper analysis. The results show that PatchTST achieves the best overall accuracy and wins 9 out of 10 dataset-horizon tasks in terms of MSE. Ablation results further indicate that Autoformer's decomposition module and PatchTST's channel independence are important for performance. The univariate/multivariate comparison suggests that additional variables do not always improve target prediction unless the model can effectively reduce inter-variable noise. Efficiency analysis shows that PatchTST provides a favorable balance between forecasting accuracy and forward inference cost.
+
+\vspace{0.4em}
+\noindent\textbf{Key words:} long-term time series forecasting; Transformer; PatchTST; Autoformer; ablation study; multivariate forecasting
+
+\newpage
+\input{body_content}
+
+\end{document}
